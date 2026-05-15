@@ -129,6 +129,13 @@ input[type=file]{display:none}
 .btn-retry{height:36px;padding:0 22px;background:transparent;border:1px solid var(--rose);color:var(--rose);border-radius:var(--radius-sm);font-size:13px;transition:background .15s}
 .btn-retry:hover{background:var(--rose-pale)}
 
+/* ── Item tabs (multi-item) ── */
+.item-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border-subtle)}
+.item-tab{height:30px;padding:0 12px;border-radius:20px;font-size:12px;font-weight:500;letter-spacing:.02em;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .18s;cursor:pointer;white-space:nowrap}
+.item-tab:hover{border-color:var(--rose);color:var(--rose)}
+.item-tab.active{background:var(--rose);border-color:var(--rose);color:#fff}
+.item-tab-count{font-size:10px;opacity:.75;margin-left:3px}
+
 /* ── Results card ── */
 #results{display:none}
 
@@ -370,6 +377,9 @@ input[type=file]{display:none}
     <!-- Results -->
     <div id="results">
 
+      <!-- Multi-item tab strip (hidden for single items) -->
+      <div class="item-tabs" id="itemTabs" style="display:none"></div>
+
       <div class="results-header">
         <!-- Circular score ring -->
         <div class="score-ring" aria-label="Pricing score">
@@ -464,12 +474,12 @@ input[type=file]{display:none}
     <table class="log-table" id="logTable">
       <thead>
         <tr>
-          <th>#</th><th>Time</th><th>Brand</th><th>Category</th>
-          <th>Photos</th><th>Score</th><th>Recommended</th><th>Final Price</th><th>Action</th>
+          <th>#</th><th>Time</th><th>Brand</th><th>Item</th>
+          <th>Score</th><th>Recommended</th><th>Final Price</th><th>Action</th>
         </tr>
       </thead>
       <tbody id="logBody">
-        <tr class="log-empty"><td colspan="9">No items logged this session</td></tr>
+        <tr class="log-empty"><td colspan="8">No items logged this session</td></tr>
       </tbody>
     </table>
   </div>
@@ -481,8 +491,9 @@ input[type=file]{display:none}
 
 // ── State ──
 const files = [null, null, null];   // up to 3 File objects
-let currentResult  = null;
-let decisionLogged = false;
+let currentItems   = [];            // array of item results from last analysis
+let activeItemIdx  = 0;             // which tab is showing
+let decisionLogged = {};            // { item_no: true } per item
 let stepTimer1, stepTimer2;
 
 // ── DOM ──
@@ -525,6 +536,7 @@ const overrideSection=document.getElementById('overrideSection');
 const overrideInput =document.getElementById('overrideInput');
 const overrideBtn =document.getElementById('overrideBtn');
 const logBody     = document.getElementById('logBody');
+const itemTabs    = document.getElementById('itemTabs');
 
 // ── Helpers ──
 function formatINR(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
@@ -637,7 +649,7 @@ async function runAnalysis(){
     try { data = JSON.parse(rawText); }
     catch(_){
       showState('error');
-      errorMsg.textContent = `Server error (HTTP ${resp.status}). Unexpected response from API — check Netlify function logs.`;
+      errorMsg.textContent = `Server error (HTTP ${resp.status}). Unexpected response — check Netlify function logs.`;
       analyseBtn.disabled = false;
       return;
     }
@@ -647,40 +659,68 @@ async function runAnalysis(){
       analyseBtn.disabled = false;
       return;
     }
-    currentResult  = data;
-    decisionLogged = false;
-    renderResults(data);
+    // Normalise to items array
+    currentItems   = data.items || [data];
+    activeItemIdx  = 0;
+    decisionLogged = {};
+    renderAllItems(data);
     analyseBtn.disabled = false;
-  } catch(err){
+  } catch(e){
     showState('error');
     errorMsg.textContent = 'Could not reach the server. Check your connection and try again.';
     analyseBtn.disabled = false;
   }
 }
 
-// ── Render ──
-function renderResults(d){
-  // Animated score ring (circumference = 2π×26 ≈ 163.4)
+// ── Render all items (build tabs, show first) ──
+function renderAllItems(data){
+  const items = data.items || [data];
+  const photoCount = data.photo_count || 1;
+
+  // Build tab strip
+  if(items.length > 1){
+    itemTabs.style.display = 'flex';
+    itemTabs.innerHTML = items.map((item, i) => {
+      const label = item.item_description || item.category;
+      return `<button class="item-tab${i===0?' active':''}" data-idx="${i}">${label}</button>`;
+    }).join('');
+    itemTabs.querySelectorAll('.item-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeItemIdx = parseInt(btn.dataset.idx);
+        itemTabs.querySelectorAll('.item-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderItem(items[activeItemIdx], photoCount);
+      });
+    });
+  } else {
+    itemTabs.style.display = 'none';
+  }
+
+  renderItem(items[0], photoCount);
+  showState('results');
+  refreshLog();
+}
+
+// ── Render a single item into the panel ──
+function renderItem(d, photoCount){
   const circum = 163.4;
-  const pct    = (d.pricing_score || 0) / 10;
-  scoreArc.style.strokeDashoffset = circum - (circum * pct);
+  scoreArc.style.strokeDashoffset = circum - circum * ((d.pricing_score || 0) / 10);
   scoreNum.textContent = d.pricing_score;
 
+  // Header
   itemBrand.textContent    = d.brand;
-  itemCategory.textContent = d.category;
+  itemCategory.textContent = d.item_description
+    ? d.item_description + (d.category !== d.item_description ? ' · ' + d.category : '')
+    : d.category;
 
   const confMap = { high:'High confidence', medium:'Medium confidence', low:'Low confidence' };
   confBadge.textContent = confMap[d.confidence] || d.confidence;
   confBadge.className   = 'conf-badge conf-' + (d.confidence || 'medium');
 
-  if(d.photo_count && d.photo_count > 1){
-    photoBadge.textContent    = d.photo_count + ' photos';
-    photoBadge.style.display  = 'inline-block';
-  } else {
-    photoBadge.style.display = 'none';
-  }
+  photoBadge.style.display = (photoCount > 1) ? 'inline-block' : 'none';
+  photoBadge.textContent   = photoCount + ' photos';
 
-  // Condition dots
+  // Condition
   condDots.innerHTML = '';
   for(let i=1; i<=5; i++){
     const dot = document.createElement('span');
@@ -690,7 +730,7 @@ function renderResults(d){
   condScore.textContent = d.condition_score + '/5';
   condNotes.textContent = d.condition_notes;
 
-  // Rarity signals
+  // Rarity
   rarityTags.innerHTML = '';
   if(d.rarity_signals && d.rarity_signals.length){
     d.rarity_signals.forEach(sig => {
@@ -711,36 +751,35 @@ function renderResults(d){
     marketSection.style.display  = 'none';
   }
 
-  // Price hero
+  // Price
   priceBand.textContent = formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
   const mid = Math.round((d.price_low + d.price_high) / 2 / 50) * 50;
   priceSub.textContent  = 'Midpoint: ' + formatINR(mid) + '  ·  Condition ' + d.condition_score + '/5';
 
   rationaleText.textContent = d.market_rationale;
 
-  // Reset decision state
-  acceptBtn.disabled     = false;
-  acceptBtn.textContent  = 'Accept — ' + formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
-  decisionOk.style.display    = 'none';
-  decisionOk.textContent      = '';
-  overrideSection.style.display= 'none';
-  overrideInput.value         = '';
+  // Decision state for this item
+  const done = decisionLogged[d.item_no];
+  acceptBtn.disabled    = !!done;
+  acceptBtn.textContent = done ? 'Price Accepted' : 'Accept — ' + formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
+  decisionOk.style.display     = done ? 'block' : 'none';
+  overrideSection.style.display = 'none';
+  overrideInput.value           = '';
   overrideInput.classList.remove('input-err');
-
-  showState('results');
-  refreshLog();
 }
 
 // ── Accept ──
 acceptBtn.addEventListener('click', async () => {
-  if(!currentResult || decisionLogged) return;
-  const mid = Math.round((currentResult.price_low + currentResult.price_high) / 2 / 50) * 50;
-  await postDecision('accepted', mid);
+  const item = currentItems[activeItemIdx];
+  if(!item || decisionLogged[item.item_no]) return;
+  const mid = Math.round((item.price_low + item.price_high) / 2 / 50) * 50;
+  await postDecision(item.item_no, 'accepted', mid);
+  decisionLogged[item.item_no] = true;
   acceptBtn.disabled = true;
+  acceptBtn.textContent = 'Price Accepted';
   overrideSection.style.display = 'none';
-  decisionOk.textContent  = '✓ Accepted at ' + formatINR(mid) + ' — logged to session';
+  decisionOk.textContent  = '✓ Accepted at ' + formatINR(mid) + ' — logged';
   decisionOk.style.display= 'block';
-  decisionLogged = true;
   refreshLog();
 });
 
@@ -756,31 +795,32 @@ overrideBtn.addEventListener('click', async () => {
   const val = parseInt(overrideInput.value, 10);
   if(!val || val < 1 || val > 99999){ overrideInput.classList.add('input-err'); return; }
   overrideInput.classList.remove('input-err');
-  if(!currentResult || decisionLogged) return;
-  await postDecision('overridden', val);
+  const item = currentItems[activeItemIdx];
+  if(!item || decisionLogged[item.item_no]) return;
+  await postDecision(item.item_no, 'overridden', val);
+  decisionLogged[item.item_no] = true;
   acceptBtn.disabled = true;
   overrideSection.style.display = 'none';
   decisionOk.textContent   = '✓ Override logged at ' + formatINR(val);
   decisionOk.style.display = 'block';
-  decisionLogged = true;
   refreshLog();
 });
 
 overrideInput.addEventListener('keydown', e => { if(e.key==='Enter') overrideBtn.click(); });
 
-async function postDecision(action, finalPrice){
+async function postDecision(itemNo, action, finalPrice){
   try {
     await fetch('/log-decision', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ item_no: currentResult.item_no, action, final_price: finalPrice }),
+      body: JSON.stringify({ item_no: itemNo, action, final_price: finalPrice }),
     });
   } catch(_){}
 }
 
 // ── Retry ──
 retryBtn.addEventListener('click', () => {
-  if(currentResult) renderResults(currentResult);
+  if(currentItems.length) renderAllItems({ items: currentItems });
   else showState('empty');
 });
 
@@ -800,13 +840,12 @@ function renderLog(log){
   }
   logBody.innerHTML = log.map((e, i) => {
     const finalCell = e.final_price ? formatINR(e.final_price) : '—';
-    const photos    = e.photo_count && e.photo_count > 1 ? e.photo_count + ' 📷' : '1 📷';
+    const desc      = e.description || e.category;
     return '<tr class="' + (i%2===1?'row-alt':'') + '">'
       + '<td>' + e.item_no + '</td>'
       + '<td>' + e.timestamp + '</td>'
       + '<td><strong>' + esc(e.brand) + '</strong></td>'
-      + '<td>' + esc(e.category) + '</td>'
-      + '<td style="color:var(--muted)">' + photos + '</td>'
+      + '<td>' + esc(desc) + '</td>'
       + '<td><span class="score-pip">' + e.score + '/10</span></td>'
       + '<td>' + formatINR(e.price_low) + ' – ' + formatINR(e.price_high) + '</td>'
       + '<td>' + finalCell + '</td>'

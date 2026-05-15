@@ -6,605 +6,344 @@
 <title>BCC AI Pricing Engine — Staff Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 /* ── Reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-img { display: block; max-width: 100%; }
-button { cursor: pointer; border: none; font: inherit; }
-input { font: inherit; }
-a { text-decoration: none; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+img{display:block;max-width:100%}
+button{cursor:pointer;border:none;font:inherit}
+input{font:inherit}
+a{text-decoration:none}
 
 /* ── Tokens ── */
-:root {
-  --bg:         #FAFAF8;
-  --dark:       #1C1C1A;
-  --rose:       #C8928A;
-  --rose-light: #E8B4AE;
-  --card:       #FFFFFF;
-  --muted:      #6B6560;
-  --success:    #4A7C6B;
-  --border:     #E8E2DC;
-  --serif:      'Cormorant Garamond', Georgia, serif;
-  --sans:       system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --radius:     12px;
-  --shadow:     0 2px 16px rgba(28,28,26,.07);
+:root{
+  --bg:#FAFAF8;
+  --dark:#1C1C1A;
+  --rose:#C8928A;
+  --rose-light:#E8B4AE;
+  --rose-pale:#FDF5F4;
+  --card:#FFFFFF;
+  --muted:#6B6560;
+  --success:#4A7C6B;
+  --success-light:#EBF4F1;
+  --border:#E8E2DC;
+  --border-subtle:#F0EBE5;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --radius:14px;
+  --radius-sm:8px;
+  --shadow:0 1px 3px rgba(28,28,26,.06),0 4px 16px rgba(28,28,26,.07);
+  --shadow-hover:0 2px 8px rgba(28,28,26,.08),0 8px 24px rgba(28,28,26,.1);
 }
 
 /* ── Base ── */
-body {
-  background: var(--bg);
-  color: var(--dark);
-  font-family: var(--sans);
-  font-size: 14px;
-  line-height: 1.55;
-  min-height: 100vh;
-}
+body{background:var(--bg);color:var(--dark);font-family:var(--sans);font-size:14px;line-height:1.55;min-height:100vh}
 
 /* ── Nav ── */
-nav {
-  background: var(--dark);
-  padding: 0 28px;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.nav-brand {
-  font-family: var(--serif);
-  font-size: 22px;
-  font-weight: 400;
-  color: #fff;
-  letter-spacing: 0.02em;
-}
-.nav-label {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #9b9590;
-}
+nav{background:var(--dark);padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{font-family:var(--serif);font-size:23px;font-weight:400;color:#fff;letter-spacing:.02em}
+.nav-sub{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6e6862}
+@media(max-width:600px){.nav-sub{display:none}}
 
 /* ── Layout ── */
-.main-wrap {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 32px 24px 40px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  align-items: start;
-}
+.main-wrap{max-width:1100px;margin:0 auto;padding:36px 24px 40px;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media(max-width:800px){.main-wrap{grid-template-columns:1fr;padding:24px 16px 32px}}
 
 /* ── Panel ── */
-.panel {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 28px;
-  box-shadow: var(--shadow);
-}
-.panel-title {
-  font-family: var(--serif);
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--dark);
-  margin-bottom: 20px;
-}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow)}
+.panel-title{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--dark);margin-bottom:6px}
+.panel-hint{font-size:12px;color:#a09a95;margin-bottom:20px}
 
-/* ── Upload panel ── */
-.drop-zone {
-  border: 2px dashed var(--rose);
-  border-radius: 8px;
-  min-height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background .18s, border-color .18s;
-  overflow: hidden;
-  position: relative;
-}
-.drop-zone:hover,
-.drop-zone.drag-over {
-  background: #fdf5f4;
-  border-color: var(--rose-light);
-}
-.drop-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 24px;
-  text-align: center;
-  pointer-events: none;
-}
-.drop-icon {
-  width: 44px;
-  height: 44px;
-  opacity: .45;
-}
-.drop-text {
-  font-size: 14px;
-  color: var(--muted);
-}
-.drop-subtext {
-  font-size: 11px;
-  color: #a09a95;
-  letter-spacing: .04em;
-}
-.drop-error {
-  font-size: 12px;
-  color: #c0392b;
-  margin-top: 4px;
-  min-height: 18px;
-}
-#imagePreview {
-  width: 100%;
-  height: 100%;
-  min-height: 220px;
-  max-height: 340px;
-  object-fit: contain;
-  background: #f5f0ec;
-  display: none;
-}
-.btn-analyse {
-  width: 100%;
-  margin-top: 16px;
-  height: 44px;
-  background: var(--rose);
-  color: #fff;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: .04em;
-  transition: background .18s, opacity .18s;
-}
-.btn-analyse:hover:not(:disabled) { background: #b8817a; }
-.btn-analyse:disabled { opacity: .45; cursor: not-allowed; }
+/* ═══════════════════════════════════════
+   UPLOAD PANEL
+═══════════════════════════════════════ */
 
-/* ── Results panel states ── */
-.empty-state {
-  min-height: 220px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  text-align: center;
-  color: var(--muted);
-}
-.empty-icon { opacity: .3; }
-.empty-state p { font-size: 13px; color: #b5afa9; }
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:160px 120px;gap:10px;margin-bottom:16px}
+.photo-slot{border:1.5px dashed var(--rose-light);border-radius:var(--radius-sm);overflow:hidden;position:relative;cursor:pointer;transition:border-color .18s,background .18s;background:#fdfaf9}
+.photo-slot:hover{border-color:var(--rose);background:var(--rose-pale)}
+.photo-slot.primary{grid-row:1/2;grid-column:1/3}
+.photo-slot.has-photo{border-style:solid;border-color:var(--border);background:#f5f0ec}
+.slot-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none}
+.slot-icon{width:32px;height:32px;opacity:.4}
+.slot-primary-icon{width:40px;height:40px;opacity:.4}
+.slot-text{font-size:12px;color:#b0a8a0;letter-spacing:.03em}
+.slot-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#c8c0b8;margin-top:2px}
+.slot-img{width:100%;height:100%;object-fit:cover;display:none}
+.slot-remove{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(28,28,26,.55);color:#fff;font-size:13px;line-height:22px;text-align:center;opacity:0;transition:opacity .18s;z-index:2;display:none;align-items:center;justify-content:center}
+.photo-slot.has-photo .slot-remove{display:flex}
+.photo-slot:hover .slot-remove{opacity:1}
 
-/* ── Skeleton / loading ── */
-.loading-state { display: none; }
-.loading-label {
-  font-size: 13px;
-  color: var(--muted);
-  text-align: center;
-  margin-bottom: 18px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-.skel-row { display: flex; gap: 14px; margin-bottom: 16px; align-items: center; }
-.skel {
-  background: linear-gradient(90deg, #ede8e3 25%, #f5f0ec 50%, #ede8e3 75%);
-  background-size: 400% 100%;
-  border-radius: 6px;
-  animation: shimmer 1.4s infinite;
-}
-@keyframes shimmer {
-  0%   { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
-}
-.skel-circle { width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0; }
-.skel-block { height: 14px; flex: 1; }
-.skel-tall { height: 28px; }
-.skel-short { max-width: 60%; }
+.photo-count-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.photo-count{font-size:12px;color:var(--muted)}
+.photo-count strong{color:var(--dark)}
+.file-types{font-size:11px;color:#c0b9b2;letter-spacing:.03em}
 
-/* ── Error state ── */
-.error-state {
-  min-height: 180px;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  text-align: center;
-  padding: 16px;
-}
-.error-icon { color: #c0392b; font-size: 28px; }
-.error-msg {
-  font-size: 13px;
-  color: #c0392b;
-  background: #fdf0ef;
-  border: 1px solid #f5c6c2;
-  border-radius: 6px;
-  padding: 12px 16px;
-  max-width: 340px;
-  line-height: 1.5;
-}
-.btn-retry {
-  height: 36px;
-  padding: 0 20px;
-  background: transparent;
-  border: 1px solid var(--rose);
-  color: var(--rose);
-  border-radius: 6px;
-  font-size: 13px;
-  transition: background .15s;
-}
-.btn-retry:hover { background: #fdf5f4; }
+input[type=file]{display:none}
+
+.btn-analyse{width:100%;height:46px;background:var(--rose);color:#fff;border-radius:var(--radius-sm);font-size:14px;font-weight:500;letter-spacing:.04em;transition:background .18s,box-shadow .18s,opacity .18s;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-analyse:hover:not(:disabled){background:#b8817a;box-shadow:0 4px 12px rgba(200,146,138,.3)}
+.btn-analyse:disabled{opacity:.4;cursor:not-allowed}
+.btn-analyse svg{flex-shrink:0}
+
+/* ═══════════════════════════════════════
+   RESULTS PANEL
+═══════════════════════════════════════ */
+
+/* Empty */
+.empty-state{min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;color:var(--muted);padding:16px}
+.empty-icon{opacity:.25}
+.empty-state p{font-size:13px;color:#c0b8b2;max-width:220px;line-height:1.6}
+
+/* ── Step progress loader ── */
+.loading-state{display:none;padding:8px 0}
+
+.step-progress{display:flex;align-items:flex-start;justify-content:center;gap:0;margin-bottom:28px;padding:0 4px}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:7px;flex:0 0 auto;min-width:72px}
+.step-icon-wrap{width:36px;height:36px;border-radius:50%;background:var(--border);color:#b8b0a8;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;transition:all .35s;position:relative}
+.step-num{font-size:13px;font-weight:600}
+.step-check{display:none;font-size:15px}
+.step-label{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#c0b8b2;transition:color .35s;text-align:center;line-height:1.3}
+.step-connector{flex:1;height:1.5px;background:var(--border);margin-top:17px;min-width:18px;max-width:40px;transition:background .35s}
+
+.step-item.active .step-icon-wrap{background:var(--rose);color:#fff;box-shadow:0 0 0 5px rgba(200,146,138,.18);animation:step-glow .9s ease-in-out infinite alternate}
+.step-item.active .step-label{color:var(--rose)}
+.step-item.done .step-icon-wrap{background:var(--success);color:#fff}
+.step-item.done .step-num{display:none}
+.step-item.done .step-check{display:block}
+.step-item.done .step-label{color:var(--success)}
+.step-item.done ~ .step-connector{background:var(--success)}
+@keyframes step-glow{from{box-shadow:0 0 0 3px rgba(200,146,138,.12)}to{box-shadow:0 0 0 8px rgba(200,146,138,.14)}}
+
+.skel{background:linear-gradient(90deg,#ede8e3 25%,#f5f0ec 50%,#ede8e3 75%);background-size:400% 100%;border-radius:6px;animation:shimmer 1.4s infinite}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.skel-row{display:flex;gap:14px;margin-bottom:16px;align-items:center}
+.skel-circle{width:56px;height:56px;border-radius:50%;flex-shrink:0}
+.skel-block{height:13px;flex:1}
+.skel-tall{height:26px}
+.skel-short{max-width:60%}
+
+/* Error */
+.error-state{min-height:200px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px}
+.error-icon{font-size:28px;color:#c0392b}
+.error-msg{font-size:13px;color:#a03020;background:#fdf0ef;border:1px solid #f5c6c2;border-radius:var(--radius-sm);padding:12px 18px;max-width:340px;line-height:1.6}
+.btn-retry{height:36px;padding:0 22px;background:transparent;border:1px solid var(--rose);color:var(--rose);border-radius:var(--radius-sm);font-size:13px;transition:background .15s}
+.btn-retry:hover{background:var(--rose-pale)}
 
 /* ── Results card ── */
-#results { display: none; }
-.results-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  margin-bottom: 22px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--border);
-}
-.score-badge {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--rose);
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  line-height: 1;
-}
-.score-num {
-  font-family: var(--serif);
-  font-size: 22px;
-  font-weight: 600;
-}
-.score-denom {
-  font-size: 10px;
-  opacity: .75;
-  letter-spacing: .02em;
-}
-.item-meta { flex: 1; min-width: 0; }
-.item-brand {
-  font-family: var(--serif);
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--dark);
-}
-.item-category {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-.conf-badge {
-  display: inline-block;
-  margin-top: 7px;
-  font-size: 10px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 20px;
-  border: 1px solid;
-}
-.conf-high  { color: var(--success); border-color: #b8d8cf; background: #f0f7f5; }
-.conf-medium{ color: #9a7a3a; border-color: #e3d099; background: #fdf9ed; }
-.conf-low   { color: #9a5b3a; border-color: #e8c4a8; background: #fdf5ef; }
+#results{display:none}
+
+.results-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--border-subtle)}
+.score-ring{position:relative;width:62px;height:62px;flex-shrink:0}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.score-ring-num{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--dark)}
+.score-ring-denom{font-size:9px;color:var(--muted);letter-spacing:.04em;margin-top:1px}
+.item-meta{flex:1;min-width:0}
+.item-brand{font-family:var(--serif);font-size:24px;font-weight:600;line-height:1.15;color:var(--dark)}
+.item-category{font-size:13px;color:var(--muted);margin-top:2px}
+.meta-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.conf-badge{font-size:10px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid}
+.conf-high  {color:var(--success);border-color:#b4d4c8;background:var(--success-light)}
+.conf-medium{color:#8a6f2a;border-color:#dcc87a;background:#fdf8e6}
+.conf-low   {color:#9a5b3a;border-color:#e2b89a;background:#fdf3ec}
+.photo-badge{font-size:10px;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:20px;color:#7a726c;border:1px solid var(--border);background:var(--border-subtle)}
 
 /* ── Section blocks ── */
-.r-section { margin-bottom: 18px; }
-.r-label {
-  font-size: 10px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: #a09a95;
-  margin-bottom: 6px;
-  font-weight: 500;
-}
+.r-section{margin-bottom:18px}
+.r-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#a09a95;margin-bottom:7px;font-weight:500}
 
-/* ── Condition dots ── */
-.cond-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-.dots { display: flex; gap: 5px; }
-.dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--border);
-  transition: background .2s;
-}
-.dot.on { background: var(--rose); }
-.cond-score { font-size: 13px; color: var(--muted); }
-.cond-notes { font-size: 13px; color: var(--muted); line-height: 1.5; }
+/* Condition dots */
+.cond-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.dots{display:flex;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--border)}
+.dot.on{background:var(--rose)}
+.cond-score{font-size:13px;font-weight:500;color:var(--muted)}
+.cond-notes{font-size:13px;color:var(--muted);line-height:1.6}
 
-/* ── Rarity tags ── */
-.tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag {
-  font-size: 11px;
-  color: var(--rose);
-  background: #fdf5f4;
-  border: 1px solid var(--rose-light);
-  border-radius: 20px;
-  padding: 3px 10px;
-  letter-spacing: .02em;
-}
+/* Rarity tags */
+.tag-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:11px;color:var(--rose);background:var(--rose-pale);border:1px solid var(--rose-light);border-radius:20px;padding:3px 11px}
 
-/* ── Price band ── */
-.price-band {
-  font-family: var(--serif);
-  font-size: 34px;
-  font-weight: 600;
-  color: var(--dark);
-  letter-spacing: -0.01em;
-  line-height: 1.1;
-}
+/* Market prices */
+.market-card{background:var(--success-light);border:1px solid #b4d4c8;border-radius:var(--radius-sm);padding:13px 15px}
+.market-header{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.live-pip{width:7px;height:7px;border-radius:50%;background:var(--success);animation:pip-pulse 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pip-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
+.market-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--success);font-weight:600}
+.market-text{font-size:13px;color:#2b5444;line-height:1.65}
 
-/* ── Rationale ── */
-.rationale-text {
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.65;
-}
+/* Price hero */
+.price-hero{background:linear-gradient(135deg,var(--dark) 0%,#2e2e2c 100%);border-radius:var(--radius-sm);padding:18px 20px;margin-bottom:0}
+.price-hero-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7a756e;margin-bottom:8px}
+.price-band{font-family:var(--serif);font-size:38px;font-weight:600;color:#fff;letter-spacing:-.01em;line-height:1}
+.price-sub{font-size:12px;color:#6a645e;margin-top:6px;letter-spacing:.02em}
 
-/* ── Market prices (live web search) ── */
-.market-card {
-  background: #f0f7f5;
-  border: 1px solid #b8d8cf;
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-size: 13px;
-  color: #2d5a4e;
-  line-height: 1.65;
-}
-.market-card-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--success);
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-.live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--success);
-  animation: pulse-dot 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: .4; transform: scale(.7); }
-}
+/* Rationale */
+.rationale-text{font-size:13px;color:var(--muted);line-height:1.7}
 
-/* ── Accept / Override ── */
-.btn-accept {
-  display: block;
-  width: 100%;
-  height: 44px;
-  background: var(--success);
-  color: #fff;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: .02em;
-  margin-top: 20px;
-  transition: background .18s, opacity .18s;
-}
-.btn-accept:hover:not(:disabled) { background: #3d6b5c; }
-.btn-accept:disabled { opacity: .45; cursor: not-allowed; }
+/* Accept / Override */
+.decision-row{display:flex;gap:10px;margin-top:20px}
+.btn-accept{flex:1;height:44px;background:var(--success);color:#fff;border-radius:var(--radius-sm);font-size:14px;font-weight:500;letter-spacing:.02em;transition:background .18s,opacity .18s,box-shadow .18s}
+.btn-accept:hover:not(:disabled){background:#3d6b5c;box-shadow:0 4px 12px rgba(74,124,107,.28)}
+.btn-accept:disabled{opacity:.4;cursor:not-allowed}
+.btn-override-open{height:44px;padding:0 18px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--radius-sm);font-size:13px;transition:border-color .15s,color .15s;white-space:nowrap}
+.btn-override-open:hover{border-color:var(--rose);color:var(--rose)}
 
-.decision-ok {
-  display: none;
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: #f0f7f5;
-  border: 1px solid #b8d8cf;
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--success);
-}
+.decision-ok{display:none;margin-top:12px;padding:10px 15px;background:var(--success-light);border:1px solid #b4d4c8;border-radius:var(--radius-sm);font-size:13px;color:var(--success)}
 
-.override-trigger {
-  margin-top: 12px;
-  text-align: center;
-}
-.override-trigger a {
-  font-size: 12px;
-  color: #a09a95;
-  border-bottom: 1px solid #d5cfc9;
-  transition: color .15s;
-}
-.override-trigger a:hover { color: var(--rose); border-color: var(--rose); }
+.override-section{display:none;margin-top:10px;padding:16px;background:#fafaf8;border:1px solid var(--border);border-radius:var(--radius-sm)}
+.override-section label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:9px}
+.override-input-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rupee{font-family:var(--serif);font-size:18px;color:var(--muted)}
+.override-input-row input{flex:1;height:40px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;font-size:14px;color:var(--dark);background:var(--card);transition:border-color .15s}
+.override-input-row input:focus{outline:none;border-color:var(--rose)}
+.override-input-row input.input-err{border-color:#e07060}
+.btn-confirm-override{width:100%;height:40px;background:var(--dark);color:#fff;border-radius:var(--radius-sm);font-size:13px;transition:background .15s}
+.btn-confirm-override:hover{background:#333330}
 
-.override-section {
-  display: none;
-  margin-top: 12px;
-  padding: 14px;
-  background: #fafaf8;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-.override-section label {
-  font-size: 11px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  display: block;
-  margin-bottom: 8px;
-}
-.override-input-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.rupee-prefix {
-  font-family: var(--serif);
-  font-size: 18px;
-  color: var(--muted);
-}
-.override-input-row input {
-  flex: 1;
-  height: 38px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0 12px;
-  font-size: 14px;
-  color: var(--dark);
-  background: var(--card);
-  transition: border-color .15s;
-}
-.override-input-row input:focus { outline: none; border-color: var(--rose); }
-.override-input-row input.input-err { border-color: #e07060; }
-.btn-override {
-  width: 100%;
-  height: 38px;
-  background: var(--dark);
-  color: #fff;
-  border-radius: 6px;
-  font-size: 13px;
-  transition: background .15s;
-}
-.btn-override:hover { background: #333330; }
-
-/* ── Session log ── */
-.log-wrap {
-  max-width: 1080px;
-  margin: 0 auto 56px;
-  padding: 0 24px;
-}
-.log-heading {
-  font-family: var(--serif);
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--dark);
-  margin-bottom: 14px;
-  padding-top: 8px;
-}
-.log-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.log-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.log-table th {
-  text-align: left;
-  font-size: 10px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: #a09a95;
-  padding: 0 14px 10px;
-  white-space: nowrap;
-  border-bottom: 1px solid var(--border);
-}
-.log-table td {
-  padding: 11px 14px;
-  color: var(--dark);
-  white-space: nowrap;
-  border-bottom: 1px solid #f0ece7;
-}
-.log-table tr.row-alt td { background: #f9f6f3; }
-.log-empty td {
-  text-align: center;
-  color: #c0b9b2;
-  padding: 32px 14px;
-  font-size: 13px;
-}
-.score-pip {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--rose);
-  color: #fff;
-  padding: 2px 7px;
-  border-radius: 20px;
-}
-.act-badge {
-  display: inline-block;
-  font-size: 10px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-weight: 500;
-}
-.act-accepted  { background: #f0f7f5; color: var(--success); border: 1px solid #b8d8cf; }
-.act-overridden{ background: #fdf5ef; color: #9a5b3a; border: 1px solid #e8c4a8; }
-.act-pending   { background: #f5f5f5; color: #a09a95; border: 1px solid #e0dbd5; }
-
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .main-wrap { grid-template-columns: 1fr; padding: 20px 16px 28px; }
-  .panel { padding: 20px; }
-  nav { padding: 0 16px; }
-  .nav-label { display: none; }
-  .price-band { font-size: 28px; }
-  .log-wrap { padding: 0 16px; }
-}
+/* ═══════════════════════════════════════
+   SESSION LOG
+═══════════════════════════════════════ */
+.log-wrap{max-width:1100px;margin:0 auto 60px;padding:0 24px}
+@media(max-width:800px){.log-wrap{padding:0 16px}}
+.log-heading{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--dark);margin-bottom:14px}
+.log-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.log-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card)}
+.log-table thead tr{background:#f5f1ed}
+.log-table th{text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#a09a95;padding:12px 16px;white-space:nowrap;border-bottom:1px solid var(--border)}
+.log-table td{padding:12px 16px;color:var(--dark);white-space:nowrap;border-bottom:1px solid var(--border-subtle)}
+.log-table tr:last-child td{border-bottom:none}
+.log-table tr.row-alt td{background:#faf7f4}
+.log-empty td{text-align:center;color:#c0b9b2;padding:36px 16px;font-size:13px}
+.score-pip{display:inline-block;font-size:11px;font-weight:600;background:var(--rose);color:#fff;padding:2px 8px;border-radius:20px}
+.act-badge{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px;font-weight:500}
+.act-accepted  {background:var(--success-light);color:var(--success);border:1px solid #b4d4c8}
+.act-overridden{background:#fdf3ec;color:#9a5b3a;border:1px solid #e2b89a}
+.act-pending   {background:#f5f5f5;color:#a09a95;border:1px solid #e0dbd5}
 </style>
 </head>
 <body>
 
-<!-- ── Nav ── -->
 <nav>
   <span class="nav-brand">Bombay Closet Cleanse</span>
-  <span class="nav-label">AI Pricing Engine — Staff Portal</span>
+  <span class="nav-sub">AI Pricing Engine &nbsp;·&nbsp; Staff Portal</span>
 </nav>
 
-<!-- ── Main two-column layout ── -->
 <div class="main-wrap">
 
-  <!-- Left: Upload panel -->
+  <!-- ── Upload panel ── -->
   <div class="panel">
-    <h2 class="panel-title">Upload Item Photo</h2>
+    <h2 class="panel-title">Upload Item Photos</h2>
+    <p class="panel-hint">Upload 1–3 photos of the same item for a more accurate assessment</p>
 
-    <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Upload clothing photo">
-      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden>
-      <div class="drop-content" id="dropContent">
-        <svg class="drop-icon" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect x="4" y="10" width="36" height="28" rx="4" stroke="#C8928A" stroke-width="2"/>
-          <circle cx="15" cy="19" r="4" stroke="#C8928A" stroke-width="2"/>
-          <path d="M4 30l9-8 7 7 5-5 11 9" stroke="#C8928A" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M22 2v12M18 6l4-4 4 4" stroke="#C8928A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <p class="drop-text">Drag &amp; drop or click to upload</p>
-        <p class="drop-subtext">JPEG · PNG · WebP &nbsp;·&nbsp; Max 10 MB</p>
+    <!-- Hidden inputs -->
+    <input type="file" id="fileInput0" accept="image/jpeg,image/png,image/webp">
+    <input type="file" id="fileInput1" accept="image/jpeg,image/png,image/webp">
+    <input type="file" id="fileInput2" accept="image/jpeg,image/png,image/webp">
+
+    <!-- Photo grid: primary (full-width) + 2 secondary -->
+    <div class="photo-grid">
+      <!-- Primary slot -->
+      <div class="photo-slot primary" id="slot0" data-idx="0" role="button" tabindex="0" aria-label="Upload main photo">
+        <div class="slot-placeholder">
+          <svg class="slot-primary-icon" viewBox="0 0 44 44" fill="none" aria-hidden="true">
+            <rect x="4" y="10" width="36" height="28" rx="4" stroke="#C8928A" stroke-width="1.8"/>
+            <circle cx="15" cy="19" r="4" stroke="#C8928A" stroke-width="1.8"/>
+            <path d="M4 30l9-8 7 7 5-5 11 9" stroke="#C8928A" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M22 2v10M18 6l4-4 4 4" stroke="#C8928A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="slot-text">Drag & drop or click</span>
+          <span class="slot-label">Main photo</span>
+        </div>
+        <img class="slot-img" id="slotImg0" alt="">
+        <div class="slot-remove" id="slotRemove0" title="Remove photo">✕</div>
       </div>
-      <img id="imagePreview" alt="Selected clothing item">
-    </div>
-    <p class="drop-error" id="dropError" aria-live="polite"></p>
 
-    <button class="btn-analyse" id="analyseBtn" disabled>Analyse Item</button>
+      <!-- Secondary slot 2 -->
+      <div class="photo-slot secondary" id="slot1" data-idx="1" role="button" tabindex="0" aria-label="Upload second angle">
+        <div class="slot-placeholder">
+          <svg class="slot-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <circle cx="16" cy="16" r="12" stroke="#C8928A" stroke-width="1.6"/>
+            <path d="M16 10v12M10 16h12" stroke="#C8928A" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <span class="slot-label">Add angle 2</span>
+        </div>
+        <img class="slot-img" id="slotImg1" alt="">
+        <div class="slot-remove" id="slotRemove1" title="Remove photo">✕</div>
+      </div>
+
+      <!-- Secondary slot 3 -->
+      <div class="photo-slot secondary" id="slot2" data-idx="2" role="button" tabindex="0" aria-label="Upload third angle">
+        <div class="slot-placeholder">
+          <svg class="slot-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <circle cx="16" cy="16" r="12" stroke="#C8928A" stroke-width="1.6"/>
+            <path d="M16 10v12M10 16h12" stroke="#C8928A" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <span class="slot-label">Add angle 3</span>
+        </div>
+        <img class="slot-img" id="slotImg2" alt="">
+        <div class="slot-remove" id="slotRemove2" title="Remove photo">✕</div>
+      </div>
+    </div>
+
+    <div class="photo-count-row">
+      <span class="photo-count" id="photoCount"><strong>0</strong> of 3 photos selected</span>
+      <span class="file-types">JPG · PNG · WebP · max 10 MB each</span>
+    </div>
+
+    <button class="btn-analyse" id="analyseBtn" disabled>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span id="analyseBtnLabel">Analyse Item</span>
+    </button>
   </div>
 
-  <!-- Right: Results panel -->
+  <!-- ── Results panel ── -->
   <div class="panel" id="resultsPanel">
 
-    <!-- Empty state -->
+    <!-- Empty -->
     <div class="empty-state" id="emptyState">
-      <svg class="empty-icon" width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true">
-        <rect x="6" y="14" width="40" height="30" rx="5" stroke="#C8928A" stroke-width="1.8"/>
-        <circle cx="18" cy="22" r="5" stroke="#C8928A" stroke-width="1.8"/>
-        <path d="M6 36l11-10 8 8 6-6 13 10" stroke="#C8928A" stroke-width="1.8" stroke-linejoin="round"/>
-        <path d="M26 4v10M22 8l4-4 4 4" stroke="#C8928A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg class="empty-icon" width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+        <rect x="6" y="14" width="44" height="32" rx="6" stroke="#C8928A" stroke-width="1.6"/>
+        <circle cx="19" cy="24" r="5.5" stroke="#C8928A" stroke-width="1.6"/>
+        <path d="M6 38l13-11 9 9 7-7 15 11" stroke="#C8928A" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M28 4v10M24 8l4-4 4 4" stroke="#C8928A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <p>Upload a photo to see the AI&nbsp;pricing assessment</p>
+      <p>Upload a photo and click Analyse to get the AI pricing assessment</p>
     </div>
 
-    <!-- Loading skeleton -->
+    <!-- Loading with step progress -->
     <div class="loading-state" id="loadingState" aria-live="polite" aria-busy="true">
-      <p class="loading-label" id="loadingLabel">Analysing item&hellip;</p>
+
+      <div class="step-progress">
+        <div class="step-item active" id="lstep1">
+          <div class="step-icon-wrap">
+            <span class="step-num">1</span>
+            <span class="step-check">✓</span>
+          </div>
+          <div class="step-label">Analysing<br>photos</div>
+        </div>
+        <div class="step-connector" id="lconn1"></div>
+        <div class="step-item" id="lstep2">
+          <div class="step-icon-wrap">
+            <span class="step-num">2</span>
+            <span class="step-check">✓</span>
+          </div>
+          <div class="step-label">Market<br>search</div>
+        </div>
+        <div class="step-connector" id="lconn2"></div>
+        <div class="step-item" id="lstep3">
+          <div class="step-icon-wrap">
+            <span class="step-num">3</span>
+            <span class="step-check">✓</span>
+          </div>
+          <div class="step-label">Building<br>price</div>
+        </div>
+      </div>
+
+      <!-- Skeleton shimmer -->
       <div class="skel-row">
         <div class="skel skel-circle"></div>
         <div style="flex:1">
@@ -612,34 +351,46 @@ nav {
           <div class="skel skel-block skel-short"></div>
         </div>
       </div>
-      <div class="skel skel-block" style="height:10px;margin-bottom:18px;max-width:40%"></div>
+      <div class="skel skel-block" style="height:10px;margin-bottom:18px;max-width:35%"></div>
       <div class="skel skel-block" style="height:12px;margin-bottom:10px"></div>
       <div class="skel skel-block" style="height:12px;margin-bottom:10px;max-width:80%"></div>
-      <div class="skel skel-block skel-tall" style="margin-bottom:18px;max-width:55%"></div>
+      <div class="skel skel-block skel-tall" style="margin-bottom:16px;max-width:50%"></div>
       <div class="skel skel-block" style="height:12px;margin-bottom:8px"></div>
-      <div class="skel skel-block" style="height:12px;margin-bottom:8px;max-width:90%"></div>
-      <div class="skel skel-block" style="height:12px;max-width:70%"></div>
+      <div class="skel skel-block" style="height:12px;margin-bottom:8px;max-width:85%"></div>
+      <div class="skel skel-block" style="height:12px;max-width:65%"></div>
     </div>
 
-    <!-- Error state -->
+    <!-- Error -->
     <div class="error-state" id="errorState" role="alert">
-      <div class="error-icon">&#9888;</div>
+      <div class="error-icon">⚠</div>
       <p class="error-msg" id="errorMsg"></p>
       <button class="btn-retry" id="retryBtn">Try Again</button>
     </div>
 
     <!-- Results -->
     <div id="results">
-      <!-- Header: score + brand/category -->
+
       <div class="results-header">
-        <div class="score-badge" id="scoreBadge" aria-label="Pricing score">
-          <span class="score-num" id="scoreNum">—</span>
-          <span class="score-denom">/10</span>
+        <!-- Circular score ring -->
+        <div class="score-ring" aria-label="Pricing score">
+          <svg width="62" height="62" viewBox="0 0 62 62">
+            <circle cx="31" cy="31" r="26" fill="none" stroke="#F0EBE5" stroke-width="5"/>
+            <circle cx="31" cy="31" r="26" fill="none" stroke="#C8928A" stroke-width="5"
+              stroke-linecap="round" id="scoreArc"
+              stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
+          </svg>
+          <div class="score-ring-text">
+            <span class="score-ring-num" id="scoreNum">—</span>
+            <span class="score-ring-denom">/10</span>
+          </div>
         </div>
         <div class="item-meta">
           <div class="item-brand" id="itemBrand"></div>
           <div class="item-category" id="itemCategory"></div>
-          <span class="conf-badge" id="confBadge"></span>
+          <div class="meta-badges">
+            <span class="conf-badge" id="confBadge"></span>
+            <span class="photo-badge" id="photoBadge" style="display:none"></span>
+          </div>
         </div>
       </div>
 
@@ -659,21 +410,24 @@ nav {
         <div class="tag-wrap" id="rarityTags"></div>
       </div>
 
-      <!-- Live market prices (web search) -->
+      <!-- Live market prices -->
       <div class="r-section" id="marketSection" style="display:none">
         <div class="market-card">
-          <div class="market-card-header">
-            <span class="live-dot"></span>
-            Live Market Research
+          <div class="market-header">
+            <span class="live-pip"></span>
+            <span class="market-label">Live Market Research</span>
           </div>
-          <p id="marketPricesText"></p>
+          <p class="market-text" id="marketPricesText"></p>
         </div>
       </div>
 
-      <!-- Price band -->
+      <!-- Recommended price hero -->
       <div class="r-section">
-        <p class="r-label">Recommended Price</p>
-        <div class="price-band" id="priceBand"></div>
+        <div class="price-hero">
+          <p class="price-hero-label">Recommended Intake Price</p>
+          <div class="price-band" id="priceBand"></div>
+          <p class="price-sub" id="priceSub"></p>
+        </div>
       </div>
 
       <!-- Rationale -->
@@ -682,28 +436,26 @@ nav {
         <p class="rationale-text" id="rationaleText"></p>
       </div>
 
-      <!-- Accept -->
-      <button class="btn-accept" id="acceptBtn">Accept Recommended Price</button>
+      <!-- Actions -->
+      <div class="decision-row">
+        <button class="btn-accept" id="acceptBtn">Accept Price</button>
+        <button class="btn-override-open" id="overrideToggle">Override</button>
+      </div>
 
-      <!-- Decision success -->
       <div class="decision-ok" id="decisionOk"></div>
 
-      <!-- Override -->
-      <div class="override-trigger" id="overrideTrigger">
-        <a href="#" id="overrideLink">Override price</a>
-      </div>
       <div class="override-section" id="overrideSection">
         <label for="overrideInput">Enter override price (INR)</label>
         <div class="override-input-row">
-          <span class="rupee-prefix">₹</span>
+          <span class="rupee">₹</span>
           <input type="number" id="overrideInput" min="1" max="99999" placeholder="e.g. 450">
         </div>
-        <button class="btn-override" id="overrideBtn">Log Override</button>
+        <button class="btn-confirm-override" id="overrideBtn">Log Override Price</button>
       </div>
-    </div>
 
-  </div>
-</div>
+    </div><!-- /results -->
+  </div><!-- /resultsPanel -->
+</div><!-- /main-wrap -->
 
 <!-- ── Session log ── -->
 <div class="log-wrap">
@@ -712,364 +464,367 @@ nav {
     <table class="log-table" id="logTable">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Time</th>
-          <th>Brand</th>
-          <th>Category</th>
-          <th>Score</th>
-          <th>Recommended</th>
-          <th>Final Price</th>
-          <th>Action</th>
+          <th>#</th><th>Time</th><th>Brand</th><th>Category</th>
+          <th>Photos</th><th>Score</th><th>Recommended</th><th>Final Price</th><th>Action</th>
         </tr>
       </thead>
       <tbody id="logBody">
-        <tr class="log-empty"><td colspan="8">No items logged this session</td></tr>
+        <tr class="log-empty"><td colspan="9">No items logged this session</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <script>
-(function () {
-  'use strict';
+(function(){
+'use strict';
 
-  // ── State ──
-  let selectedFile = null;
-  let currentResult = null;
-  let decisionLogged = false;
-  let loadingTimer = null;
+// ── State ──
+const files = [null, null, null];   // up to 3 File objects
+let currentResult  = null;
+let decisionLogged = false;
+let stepTimer1, stepTimer2;
 
-  // ── DOM refs ──
-  const dropZone      = document.getElementById('dropZone');
-  const fileInput     = document.getElementById('fileInput');
-  const dropContent   = document.getElementById('dropContent');
-  const imagePreview  = document.getElementById('imagePreview');
-  const dropError     = document.getElementById('dropError');
-  const analyseBtn    = document.getElementById('analyseBtn');
+// ── DOM ──
+const slots       = [0,1,2].map(i => document.getElementById('slot'  + i));
+const slotImgs    = [0,1,2].map(i => document.getElementById('slotImg'   + i));
+const slotRemoves = [0,1,2].map(i => document.getElementById('slotRemove'+ i));
+const fileInputs  = [0,1,2].map(i => document.getElementById('fileInput' + i));
+const photoCount  = document.getElementById('photoCount');
+const analyseBtn  = document.getElementById('analyseBtn');
+const analyseLbl  = document.getElementById('analyseBtnLabel');
 
-  const emptyState    = document.getElementById('emptyState');
-  const loadingState  = document.getElementById('loadingState');
-  const errorState    = document.getElementById('errorState');
-  const errorMsg      = document.getElementById('errorMsg');
-  const retryBtn      = document.getElementById('retryBtn');
-  const results       = document.getElementById('results');
+const emptyState  = document.getElementById('emptyState');
+const loadingState= document.getElementById('loadingState');
+const errorState  = document.getElementById('errorState');
+const errorMsg    = document.getElementById('errorMsg');
+const retryBtn    = document.getElementById('retryBtn');
+const results     = document.getElementById('results');
 
-  const scoreNum      = document.getElementById('scoreNum');
-  const itemBrand     = document.getElementById('itemBrand');
-  const itemCategory  = document.getElementById('itemCategory');
-  const confBadge     = document.getElementById('confBadge');
-  const condDots      = document.getElementById('condDots');
-  const condScore     = document.getElementById('condScore');
-  const condNotes     = document.getElementById('condNotes');
-  const raritySection = document.getElementById('raritySection');
-  const rarityTags    = document.getElementById('rarityTags');
-  const priceBand     = document.getElementById('priceBand');
-  const rationaleText = document.getElementById('rationaleText');
+const scoreNum    = document.getElementById('scoreNum');
+const scoreArc    = document.getElementById('scoreArc');
+const itemBrand   = document.getElementById('itemBrand');
+const itemCategory= document.getElementById('itemCategory');
+const confBadge   = document.getElementById('confBadge');
+const photoBadge  = document.getElementById('photoBadge');
+const condDots    = document.getElementById('condDots');
+const condScore   = document.getElementById('condScore');
+const condNotes   = document.getElementById('condNotes');
+const raritySection=document.getElementById('raritySection');
+const rarityTags  = document.getElementById('rarityTags');
+const marketSection=document.getElementById('marketSection');
+const marketPricesText=document.getElementById('marketPricesText');
+const priceBand   = document.getElementById('priceBand');
+const priceSub    = document.getElementById('priceSub');
+const rationaleText=document.getElementById('rationaleText');
 
-  const acceptBtn     = document.getElementById('acceptBtn');
-  const decisionOk    = document.getElementById('decisionOk');
-  const overrideTrigger = document.getElementById('overrideTrigger');
-  const overrideLink  = document.getElementById('overrideLink');
-  const overrideSection = document.getElementById('overrideSection');
-  const overrideInput = document.getElementById('overrideInput');
-  const overrideBtn   = document.getElementById('overrideBtn');
-  const logBody       = document.getElementById('logBody');
-  const loadingLabel  = document.getElementById('loadingLabel');
-  const marketSection = document.getElementById('marketSection');
-  const marketPricesText = document.getElementById('marketPricesText');
+const acceptBtn   = document.getElementById('acceptBtn');
+const decisionOk  = document.getElementById('decisionOk');
+const overrideToggle=document.getElementById('overrideToggle');
+const overrideSection=document.getElementById('overrideSection');
+const overrideInput =document.getElementById('overrideInput');
+const overrideBtn =document.getElementById('overrideBtn');
+const logBody     = document.getElementById('logBody');
 
-  // ── Helpers ──
-  function formatINR(n) {
-    return '₹' + Math.round(n).toLocaleString('en-IN');
-  }
+// ── Helpers ──
+function formatINR(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
 
-  const LOADING_STEPS = [
-    'Analysing clothing item…',
-    'Searching live market prices…',
-    'Generating price recommendation…',
-  ];
+function updatePhotoCount(){
+  const n = files.filter(Boolean).length;
+  photoCount.innerHTML = '<strong>' + n + '</strong> of 3 photos selected';
+  analyseBtn.disabled  = n === 0;
+  analyseLbl.textContent = n === 0 ? 'Analyse Item'
+    : n === 1 ? 'Analyse Item (1 photo)'
+    : 'Analyse Item (' + n + ' photos)';
+}
 
-  function startLoadingSteps() {
-    let step = 0;
-    loadingLabel.textContent = LOADING_STEPS[0];
-    if (loadingTimer) clearInterval(loadingTimer);
-    loadingTimer = setInterval(() => {
-      step = (step + 1) % LOADING_STEPS.length;
-      loadingLabel.textContent = LOADING_STEPS[step];
-    }, 3500);
-  }
-
-  function stopLoadingSteps() {
-    if (loadingTimer) { clearInterval(loadingTimer); loadingTimer = null; }
-    loadingLabel.textContent = LOADING_STEPS[0];
-  }
-
-  function showState(name) {
-    emptyState.style.display   = name === 'empty'   ? 'flex'  : 'none';
-    loadingState.style.display = name === 'loading' ? 'block' : 'none';
-    errorState.style.display   = name === 'error'   ? 'flex'  : 'none';
-    results.style.display      = name === 'results' ? 'block' : 'none';
-    if (name !== 'loading') stopLoadingSteps();
-  }
-
-  // ── File selection ──
-  dropZone.addEventListener('click', () => fileInput.click());
-  dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
-
-  fileInput.addEventListener('change', e => {
-    const f = e.target.files && e.target.files[0];
-    if (f) handleFile(f);
-    // reset so same file can be reselected
-    fileInput.value = '';
+// ── Slot interaction ──
+slots.forEach((slot, idx) => {
+  slot.addEventListener('click', e => {
+    if (e.target === slotRemoves[idx] || slotRemoves[idx].contains(e.target)) return;
+    fileInputs[idx].click();
   });
-
-  dropZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
+  slot.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') fileInputs[idx].click(); });
+  slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+  slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+  slot.addEventListener('drop', e => {
+    e.preventDefault(); slot.classList.remove('drag-over');
     const f = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (f) handleFile(f);
+    if (f) setSlotFile(idx, f);
   });
 
-  function handleFile(file) {
-    dropError.textContent = '';
-    const valid = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!valid.includes(file.type.toLowerCase())) {
-      dropError.textContent = 'Only JPEG, PNG, or WebP images are accepted.';
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      dropError.textContent = 'File exceeds 10 MB limit. Please use a smaller image.';
-      return;
-    }
-    selectedFile = file;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      imagePreview.src = ev.target.result;
-      imagePreview.style.display = 'block';
-      dropContent.style.display  = 'none';
-    };
-    reader.readAsDataURL(file);
-    analyseBtn.disabled = false;
-    // Reset results if re-uploading
-    if (results.style.display === 'block') showState('empty');
-  }
+  slotRemoves[idx].addEventListener('click', e => {
+    e.stopPropagation();
+    clearSlot(idx);
+  });
 
-  // ── Analyse ──
-  analyseBtn.addEventListener('click', runAnalysis);
+  fileInputs[idx].addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) setSlotFile(idx, f);
+    fileInputs[idx].value = '';
+  });
+});
 
-  async function runAnalysis() {
-    if (!selectedFile) return;
-    analyseBtn.disabled = true;
-    showState('loading');
-    startLoadingSteps();
+function setSlotFile(idx, file){
+  const valid = ['image/jpeg','image/jpg','image/png','image/webp'];
+  if(!valid.includes(file.type.toLowerCase())) return;
+  if(file.size > 10*1024*1024) return;
+  files[idx] = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    slotImgs[idx].src = ev.target.result;
+    slotImgs[idx].style.display = 'block';
+    slots[idx].querySelector('.slot-placeholder').style.display = 'none';
+    slots[idx].classList.add('has-photo');
+  };
+  reader.readAsDataURL(file);
+  updatePhotoCount();
+  if(results.style.display==='block') showState('empty');
+}
 
-    const fd = new FormData();
-    fd.append('file', selectedFile);
+function clearSlot(idx){
+  files[idx] = null;
+  slotImgs[idx].src = '';
+  slotImgs[idx].style.display = 'none';
+  slots[idx].querySelector('.slot-placeholder').style.display = '';
+  slots[idx].classList.remove('has-photo');
+  updatePhotoCount();
+}
 
-    try {
-      const resp = await fetch('/analyse', { method: 'POST', body: fd });
+// ── Step progress ──
+function setStep(n){
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('lstep' + i);
+    el.className = 'step-item ' + (i < n ? 'done' : i === n ? 'active' : '');
+  });
+}
+function startSteps(){
+  setStep(1);
+  stepTimer1 = setTimeout(() => setStep(2), 4500);
+  stepTimer2 = setTimeout(() => setStep(3), 13000);
+}
+function stopSteps(){
+  clearTimeout(stepTimer1); clearTimeout(stepTimer2);
+  setStep(1);
+}
 
-      // Read as text first so a non-JSON error body never causes a silent throw
-      const rawText = await resp.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch (_) {
-        showState('error');
-        errorMsg.textContent = `Server error (HTTP ${resp.status}). The API returned an unexpected response — check Netlify function logs.`;
-        analyseBtn.disabled = false;
-        return;
-      }
+// ── State manager ──
+function showState(name){
+  emptyState.style.display   = name==='empty'   ? 'flex'  : 'none';
+  loadingState.style.display = name==='loading' ? 'block' : 'none';
+  errorState.style.display   = name==='error'   ? 'flex'  : 'none';
+  results.style.display      = name==='results' ? 'block' : 'none';
+  if(name !== 'loading') stopSteps();
+}
 
-      if (!resp.ok) {
-        showState('error');
-        errorMsg.textContent = data.detail || `Error ${resp.status}: Analysis failed.`;
-        analyseBtn.disabled = false;
-        return;
-      }
+// ── Analyse ──
+analyseBtn.addEventListener('click', runAnalysis);
 
-      currentResult = data;
-      decisionLogged = false;
-      renderResults(data);
-      analyseBtn.disabled = false;
+async function runAnalysis(){
+  const activeFiles = files.filter(Boolean);
+  if(!activeFiles.length) return;
+  analyseBtn.disabled = true;
+  showState('loading');
+  startSteps();
 
-    } catch (err) {
+  const fd = new FormData();
+  activeFiles.forEach(f => fd.append('file', f));
+
+  try {
+    const resp = await fetch('/analyse', { method:'POST', body:fd });
+    const rawText = await resp.text();
+    let data;
+    try { data = JSON.parse(rawText); }
+    catch(_){
       showState('error');
-      errorMsg.textContent = 'Could not reach the server. Check your connection and try again.';
+      errorMsg.textContent = `Server error (HTTP ${resp.status}). Unexpected response from API — check Netlify function logs.`;
       analyseBtn.disabled = false;
-    }
-  }
-
-  // ── Render results ──
-  function renderResults(d) {
-    scoreNum.textContent = d.pricing_score;
-    itemBrand.textContent = d.brand;
-    itemCategory.textContent = d.category;
-
-    // Confidence badge
-    const confMap = { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence' };
-    confBadge.textContent = confMap[d.confidence] || d.confidence;
-    confBadge.className = 'conf-badge conf-' + (d.confidence || 'medium');
-
-    // Condition dots
-    condDots.innerHTML = '';
-    for (let i = 1; i <= 5; i++) {
-      const dot = document.createElement('span');
-      dot.className = 'dot' + (i <= d.condition_score ? ' on' : '');
-      condDots.appendChild(dot);
-    }
-    condScore.textContent = d.condition_score + '/5';
-    condNotes.textContent = d.condition_notes;
-
-    // Rarity signals
-    rarityTags.innerHTML = '';
-    if (d.rarity_signals && d.rarity_signals.length > 0) {
-      d.rarity_signals.forEach(sig => {
-        const t = document.createElement('span');
-        t.className = 'tag';
-        t.textContent = sig;
-        rarityTags.appendChild(t);
-      });
-      raritySection.style.display = 'block';
-    } else {
-      raritySection.style.display = 'none';
-    }
-
-    // Live market prices (web search)
-    if (d.market_prices) {
-      marketPricesText.textContent = d.market_prices;
-      marketSection.style.display = 'block';
-    } else {
-      marketSection.style.display = 'none';
-    }
-
-    priceBand.textContent = formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
-    rationaleText.textContent = d.market_rationale;
-
-    // Reset decision state
-    acceptBtn.disabled = false;
-    acceptBtn.textContent = 'Accept — ' + formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
-    decisionOk.style.display = 'none';
-    decisionOk.textContent = '';
-    overrideTrigger.style.display = 'block';
-    overrideSection.style.display = 'none';
-    overrideInput.value = '';
-    overrideInput.classList.remove('input-err');
-
-    showState('results');
-    refreshLog();
-  }
-
-  // ── Accept ──
-  acceptBtn.addEventListener('click', async () => {
-    if (!currentResult || decisionLogged) return;
-    const mid = Math.round((currentResult.price_low + currentResult.price_high) / 2 / 50) * 50;
-    await postDecision('accepted', mid);
-    acceptBtn.disabled = true;
-    overrideTrigger.style.display = 'none';
-    overrideSection.style.display = 'none';
-    decisionOk.textContent = '✓ Accepted at ' + formatINR(mid) + ' — logged to session';
-    decisionOk.style.display = 'block';
-    decisionLogged = true;
-    refreshLog();
-  });
-
-  // ── Override toggle ──
-  overrideLink.addEventListener('click', e => {
-    e.preventDefault();
-    overrideSection.style.display = overrideSection.style.display === 'none' ? 'block' : 'none';
-    if (overrideSection.style.display === 'block') overrideInput.focus();
-  });
-
-  // ── Override submit ──
-  overrideBtn.addEventListener('click', async () => {
-    const val = parseInt(overrideInput.value, 10);
-    if (!val || val < 1 || val > 99999) {
-      overrideInput.classList.add('input-err');
       return;
     }
-    overrideInput.classList.remove('input-err');
-    if (!currentResult || decisionLogged) return;
-
-    await postDecision('overridden', val);
-    acceptBtn.disabled = true;
-    overrideTrigger.style.display = 'none';
-    overrideSection.style.display = 'none';
-    decisionOk.textContent = '✓ Override logged at ' + formatINR(val);
-    decisionOk.style.display = 'block';
-    decisionLogged = true;
-    refreshLog();
-  });
-
-  overrideInput.addEventListener('keydown', e => { if (e.key === 'Enter') overrideBtn.click(); });
-
-  async function postDecision(action, finalPrice) {
-    try {
-      await fetch('/log-decision', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item_no: currentResult.item_no, action, final_price: finalPrice })
-      });
-    } catch (_) { /* non-fatal */ }
-  }
-
-  // ── Retry ──
-  retryBtn.addEventListener('click', () => {
-    if (currentResult) {
-      renderResults(currentResult);
-    } else {
-      showState('empty');
-    }
-  });
-
-  // ── Session log ──
-  async function refreshLog() {
-    try {
-      const resp = await fetch('/session-log');
-      const data = await resp.json();
-      renderLog(data.log || []);
-    } catch (_) { /* non-fatal */ }
-  }
-
-  function renderLog(log) {
-    if (!log.length) {
-      logBody.innerHTML = '<tr class="log-empty"><td colspan="8">No items logged this session</td></tr>';
+    if(!resp.ok){
+      showState('error');
+      errorMsg.textContent = data.detail || `Error ${resp.status}: Analysis failed.`;
+      analyseBtn.disabled = false;
       return;
     }
-    logBody.innerHTML = log.map((e, i) => {
-      const actClass = 'act-' + e.action;
-      const actLabel = e.action.charAt(0).toUpperCase() + e.action.slice(1);
-      const finalCell = e.final_price ? formatINR(e.final_price) : '—';
-      return '<tr class="' + (i % 2 === 1 ? 'row-alt' : '') + '">'
-        + '<td>' + e.item_no + '</td>'
-        + '<td>' + e.timestamp + '</td>'
-        + '<td><strong>' + esc(e.brand) + '</strong></td>'
-        + '<td>' + esc(e.category) + '</td>'
-        + '<td><span class="score-pip">' + e.score + '/10</span></td>'
-        + '<td>' + formatINR(e.price_low) + ' – ' + formatINR(e.price_high) + '</td>'
-        + '<td>' + finalCell + '</td>'
-        + '<td><span class="act-badge ' + actClass + '">' + actLabel + '</span></td>'
-        + '</tr>';
-    }).join('');
+    currentResult  = data;
+    decisionLogged = false;
+    renderResults(data);
+    analyseBtn.disabled = false;
+  } catch(err){
+    showState('error');
+    errorMsg.textContent = 'Could not reach the server. Check your connection and try again.';
+    analyseBtn.disabled = false;
+  }
+}
+
+// ── Render ──
+function renderResults(d){
+  // Animated score ring (circumference = 2π×26 ≈ 163.4)
+  const circum = 163.4;
+  const pct    = (d.pricing_score || 0) / 10;
+  scoreArc.style.strokeDashoffset = circum - (circum * pct);
+  scoreNum.textContent = d.pricing_score;
+
+  itemBrand.textContent    = d.brand;
+  itemCategory.textContent = d.category;
+
+  const confMap = { high:'High confidence', medium:'Medium confidence', low:'Low confidence' };
+  confBadge.textContent = confMap[d.confidence] || d.confidence;
+  confBadge.className   = 'conf-badge conf-' + (d.confidence || 'medium');
+
+  if(d.photo_count && d.photo_count > 1){
+    photoBadge.textContent    = d.photo_count + ' photos';
+    photoBadge.style.display  = 'inline-block';
+  } else {
+    photoBadge.style.display = 'none';
   }
 
-  function esc(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  // Condition dots
+  condDots.innerHTML = '';
+  for(let i=1; i<=5; i++){
+    const dot = document.createElement('span');
+    dot.className = 'dot' + (i <= d.condition_score ? ' on' : '');
+    condDots.appendChild(dot);
+  }
+  condScore.textContent = d.condition_score + '/5';
+  condNotes.textContent = d.condition_notes;
+
+  // Rarity signals
+  rarityTags.innerHTML = '';
+  if(d.rarity_signals && d.rarity_signals.length){
+    d.rarity_signals.forEach(sig => {
+      const t = document.createElement('span');
+      t.className = 'tag'; t.textContent = sig;
+      rarityTags.appendChild(t);
+    });
+    raritySection.style.display = 'block';
+  } else {
+    raritySection.style.display = 'none';
   }
 
-  // Initial load + poll
-  showState('empty');
+  // Market prices
+  if(d.market_prices){
+    marketPricesText.textContent = d.market_prices;
+    marketSection.style.display  = 'block';
+  } else {
+    marketSection.style.display  = 'none';
+  }
+
+  // Price hero
+  priceBand.textContent = formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
+  const mid = Math.round((d.price_low + d.price_high) / 2 / 50) * 50;
+  priceSub.textContent  = 'Midpoint: ' + formatINR(mid) + '  ·  Condition ' + d.condition_score + '/5';
+
+  rationaleText.textContent = d.market_rationale;
+
+  // Reset decision state
+  acceptBtn.disabled     = false;
+  acceptBtn.textContent  = 'Accept — ' + formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
+  decisionOk.style.display    = 'none';
+  decisionOk.textContent      = '';
+  overrideSection.style.display= 'none';
+  overrideInput.value         = '';
+  overrideInput.classList.remove('input-err');
+
+  showState('results');
   refreshLog();
-  setInterval(refreshLog, 12000);
+}
+
+// ── Accept ──
+acceptBtn.addEventListener('click', async () => {
+  if(!currentResult || decisionLogged) return;
+  const mid = Math.round((currentResult.price_low + currentResult.price_high) / 2 / 50) * 50;
+  await postDecision('accepted', mid);
+  acceptBtn.disabled = true;
+  overrideSection.style.display = 'none';
+  decisionOk.textContent  = '✓ Accepted at ' + formatINR(mid) + ' — logged to session';
+  decisionOk.style.display= 'block';
+  decisionLogged = true;
+  refreshLog();
+});
+
+// ── Override toggle ──
+overrideToggle.addEventListener('click', () => {
+  const open = overrideSection.style.display === 'block';
+  overrideSection.style.display = open ? 'none' : 'block';
+  if(!open) overrideInput.focus();
+});
+
+// ── Override submit ──
+overrideBtn.addEventListener('click', async () => {
+  const val = parseInt(overrideInput.value, 10);
+  if(!val || val < 1 || val > 99999){ overrideInput.classList.add('input-err'); return; }
+  overrideInput.classList.remove('input-err');
+  if(!currentResult || decisionLogged) return;
+  await postDecision('overridden', val);
+  acceptBtn.disabled = true;
+  overrideSection.style.display = 'none';
+  decisionOk.textContent   = '✓ Override logged at ' + formatINR(val);
+  decisionOk.style.display = 'block';
+  decisionLogged = true;
+  refreshLog();
+});
+
+overrideInput.addEventListener('keydown', e => { if(e.key==='Enter') overrideBtn.click(); });
+
+async function postDecision(action, finalPrice){
+  try {
+    await fetch('/log-decision', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ item_no: currentResult.item_no, action, final_price: finalPrice }),
+    });
+  } catch(_){}
+}
+
+// ── Retry ──
+retryBtn.addEventListener('click', () => {
+  if(currentResult) renderResults(currentResult);
+  else showState('empty');
+});
+
+// ── Session log ──
+async function refreshLog(){
+  try {
+    const resp = await fetch('/session-log');
+    const data = await resp.json();
+    renderLog(data.log || []);
+  } catch(_){}
+}
+
+function renderLog(log){
+  if(!log.length){
+    logBody.innerHTML = '<tr class="log-empty"><td colspan="9">No items logged this session</td></tr>';
+    return;
+  }
+  logBody.innerHTML = log.map((e, i) => {
+    const finalCell = e.final_price ? formatINR(e.final_price) : '—';
+    const photos    = e.photo_count && e.photo_count > 1 ? e.photo_count + ' 📷' : '1 📷';
+    return '<tr class="' + (i%2===1?'row-alt':'') + '">'
+      + '<td>' + e.item_no + '</td>'
+      + '<td>' + e.timestamp + '</td>'
+      + '<td><strong>' + esc(e.brand) + '</strong></td>'
+      + '<td>' + esc(e.category) + '</td>'
+      + '<td style="color:var(--muted)">' + photos + '</td>'
+      + '<td><span class="score-pip">' + e.score + '/10</span></td>'
+      + '<td>' + formatINR(e.price_low) + ' – ' + formatINR(e.price_high) + '</td>'
+      + '<td>' + finalCell + '</td>'
+      + '<td><span class="act-badge act-' + e.action + '">'
+         + e.action.charAt(0).toUpperCase() + e.action.slice(1) + '</span></td>'
+      + '</tr>';
+  }).join('');
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init
+showState('empty');
+refreshLog();
+setInterval(refreshLog, 12000);
+updatePhotoCount();
 
 })();
 </script>

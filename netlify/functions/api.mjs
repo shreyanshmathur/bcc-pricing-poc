@@ -1,19 +1,33 @@
 /**
  * BCC AI Pricing Engine — Netlify Function (v2, JavaScript)
- * Zero npm dependencies — uses built-in fetch + Buffer + req.formData().
- * Calls Groq HTTP API directly; no groq-sdk package required.
+ * Zero npm dependencies. Calls Groq HTTP API directly.
  *
- * Pipeline:
- *  1. Vision  — llama-4-scout  → brand, category, condition, initial price
+ * Pipeline (per analyse request):
+ *  1. Vision  — llama-4-scout  → brand, category, condition, initial price (up to 3 images)
  *  2. Search  — compound-beta  → live retail MRP + Indian resale prices (web search)
- *  3. Rationale — llama-3.3-70b → human-readable justification using real market data
+ *  3. Rationale — llama-3.3-70b → human-readable justification grounded in market data
+ *
+ * Key rotation: alternates between GROQ_API_KEY and GROQ_API_KEY_2 to avoid rate limits.
  */
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-// In-memory state — persists across warm Lambda invocations
-let _sessionLog = [];
+let _sessionLog  = [];
 let _itemCounter = 0;
+let _keyIndex    = 0;          // round-robin across API keys
+
+// ── API key rotation ──────────────────────────────────────────────────────────
+
+function pickApiKey() {
+  const keys = [
+    process.env.GROQ_API_KEY,
+    process.env.GROQ_API_KEY_2,
+  ].filter(Boolean);
+  if (!keys.length) return null;
+  const key = keys[_keyIndex % keys.length];
+  _keyIndex++;
+  return key;
+}
 
 // ── Prompts ───────────────────────────────────────────────────────────────────
 
@@ -34,6 +48,8 @@ Pricing guidelines:
 - Condition 1/5: Rs99-Rs149 | 2/5: Rs150-Rs299 | 3/5: Rs299-Rs499
 - Condition 4/5: Rs399-Rs699 | 5/5: Rs499-Rs999
 - Add 40-80% for premium/designer brands; 20-40% for rarity signals
+
+If multiple photos are provided they are all of the same item — use them together for a more accurate assessment.
 
 Respond ONLY with a valid JSON object — no markdown, no text outside JSON:
 {
@@ -63,13 +79,8 @@ function corsHeaders() {
   };
 }
 
-function ok(data) {
-  return new Response(JSON.stringify(data), { status: 200, headers: corsHeaders() });
-}
-
-function err(status, msg) {
-  return new Response(JSON.stringify({ detail: msg }), { status, headers: corsHeaders() });
-}
+function ok(data)        { return new Response(JSON.stringify(data), { status: 200, headers: corsHeaders() }); }
+function err(status, msg){ return new Response(JSON.stringify({ detail: msg }), { status, headers: corsHeaders() }); }
 
 async function groqChat(model, messages, extra, apiKey) {
   const resp = await fetch(GROQ_URL, {
@@ -85,28 +96,22 @@ async function groqChat(model, messages, extra, apiKey) {
   return json.choices[0].message.content;
 }
 
-/**
- * Fetch live retail MRP + Indian resale prices using Groq compound-beta (web search).
- * Returns a brief 2-3 sentence summary, or null on any failure (graceful degradation).
- */
+/** Live market price search via compound-beta web search. Gracefully returns null on failure. */
 async function fetchMarketPrices(brand, category, apiKey) {
-  // Unbranded items have no useful market benchmark — skip
   if (!brand || brand.toLowerCase() === 'unbranded') return null;
-
   try {
     const result = await groqChat(
       'compound-beta',
       [
         {
           role: 'system',
-          content: 'You are a pricing researcher for Indian fashion resale. Use web search to find current prices. Be concise — answer in 2-3 sentences with specific INR amounts. Focus on India market only.',
+          content: 'You are a pricing researcher for Indian fashion resale. Use web search. Answer in 2-3 sentences with specific INR amounts. India market only.',
         },
         {
           role: 'user',
           content:
-            `Search online and tell me: ` +
-            `(1) What is the current retail/MRP price of ${brand} ${category} sold new in India (INR)? ` +
-            `(2) What are people currently selling second-hand ${brand} ${category} for on OLX India, Carousell India, or Indian Instagram thrift accounts (INR)? ` +
+            `Search and find: (1) Current retail/MRP price of ${brand} ${category} sold new in India (INR). ` +
+            `(2) Current second-hand resale prices for ${brand} ${category} on OLX India, Carousell India, or Indian Instagram thrift accounts (INR). ` +
             `Give specific price ranges. Be brief.`,
         },
       ],
@@ -115,7 +120,6 @@ async function fetchMarketPrices(brand, category, apiKey) {
     );
     return result ? result.trim() : null;
   } catch (_) {
-    // Web search is best-effort — never fail the whole pipeline
     return null;
   }
 }
@@ -123,67 +127,66 @@ async function fetchMarketPrices(brand, category, apiKey) {
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export default async function handler(req) {
-  const url = new URL(req.url);
-  const path = url.pathname;
+  const url    = new URL(req.url);
+  const path   = url.pathname;
   const method = req.method.toUpperCase();
 
-  if (method === 'OPTIONS') {
-    return new Response('', { status: 200, headers: corsHeaders() });
-  }
+  if (method === 'OPTIONS') return new Response('', { status: 200, headers: corsHeaders() });
 
   // ── POST /analyse ──────────────────────────────────────────────────────────
   if (path.endsWith('/analyse') && method === 'POST') {
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = pickApiKey();
     if (!apiKey) return err(500, 'GROQ_API_KEY is not configured on the server.');
 
-    // Parse multipart form data — native in Node 18+ / Netlify v2
     let formData;
-    try {
-      formData = await req.formData();
-    } catch (e) {
-      return err(400, `Could not parse form data: ${e.message}`);
+    try { formData = await req.formData(); }
+    catch (e) { return err(400, `Could not parse form data: ${e.message}`); }
+
+    // Accept up to 3 files (all sent with field name "file")
+    const rawFiles = formData.getAll('file').filter(f => f && typeof f !== 'string');
+    if (!rawFiles.length) return err(400, 'No file found in request. Upload a JPEG or PNG image.');
+
+    const files = rawFiles.slice(0, 3);
+
+    // Per-file size check (10 MB each) + total sanity check
+    let totalBytes = 0;
+    for (const f of files) {
+      if (f.size > 10 * 1024 * 1024)
+        return err(413, `One file is ${(f.size / 1024 / 1024).toFixed(1)} MB — max 10 MB per photo.`);
+      totalBytes += f.size;
     }
+    if (totalBytes > 25 * 1024 * 1024)
+      return err(413, `Total upload is ${(totalBytes / 1024 / 1024).toFixed(1)} MB — max 25 MB combined.`);
 
-    const file = formData.get('file');
-    if (!file || typeof file === 'string') {
-      return err(400, 'No file found in request. Upload a JPEG or PNG image.');
-    }
+    // Build image_url content blocks for all uploaded photos
+    const imageBlocks = await Promise.all(files.map(async file => {
+      const buf  = await file.arrayBuffer();
+      const b64  = Buffer.from(buf).toString('base64');
+      const mime = file.type || 'image/jpeg';
+      return { type: 'image_url', image_url: { url: `data:${mime};base64,${b64}` } };
+    }));
 
-    const arrayBuf = await file.arrayBuffer();
-    const bytes = arrayBuf.byteLength;
-    if (bytes > 10 * 1024 * 1024) {
-      return err(413, `File is ${(bytes / 1024 / 1024).toFixed(1)} MB — max is 10 MB.`);
-    }
-
-    const b64 = Buffer.from(arrayBuf).toString('base64');
-    const mime = file.type || 'image/jpeg';
-    const dataUrl = `data:${mime};base64,${b64}`;
-
-    // ── Step 1: Vision analysis ──────────────────────────────────────────────
+    // ── Step 1: Vision ───────────────────────────────────────────────────────
     let visionRaw;
     try {
+      const photoNote = files.length > 1
+        ? `Analyse these ${files.length} photos of the same clothing item and return your pricing assessment as a JSON object.`
+        : 'Analyse this clothing item and return your pricing assessment as a JSON object.';
+
       visionRaw = await groqChat(
         'meta-llama/llama-4-scout-17b-16e-instruct',
         [
           { role: 'system', content: VISION_PROMPT },
-          { role: 'user', content: [
-            { type: 'image_url', image_url: { url: dataUrl } },
-            { type: 'text', text: 'Analyse this clothing item and return your pricing assessment as a JSON object.' },
-          ]},
+          { role: 'user', content: [...imageBlocks, { type: 'text', text: photoNote }] },
         ],
         { response_format: { type: 'json_object' }, max_tokens: 1024, temperature: 0.2 },
         apiKey
       );
-    } catch (e) {
-      return err(502, `Vision model request failed: ${e.message}`);
-    }
+    } catch (e) { return err(502, `Vision model request failed: ${e.message}`); }
 
     let vdata;
-    try {
-      vdata = JSON.parse(visionRaw);
-    } catch {
-      return err(502, `Could not parse model response: ${String(visionRaw).slice(0, 200)}`);
-    }
+    try { vdata = JSON.parse(visionRaw); }
+    catch { return err(502, `Could not parse model response: ${String(visionRaw).slice(0, 200)}`); }
 
     if (vdata.error) return err(422, vdata.error);
 
@@ -196,37 +199,32 @@ export default async function handler(req) {
     vdata.pricing_score   = Math.max(1, Math.min(10, parseInt(vdata.pricing_score) || 5));
     vdata.price_low       = parseInt(vdata.price_low)  || 299;
     vdata.price_high      = parseInt(vdata.price_high) || 499;
-    if (!Array.isArray(vdata.rarity_signals)) {
+    if (!Array.isArray(vdata.rarity_signals))
       vdata.rarity_signals = vdata.rarity_signals ? [String(vdata.rarity_signals)] : [];
-    }
-    if (vdata.price_low > vdata.price_high) {
+    if (vdata.price_low > vdata.price_high)
       [vdata.price_low, vdata.price_high] = [vdata.price_high, vdata.price_low];
-    }
 
-    // ── Step 2: Live market price search (web) ───────────────────────────────
-    const marketPrices = await fetchMarketPrices(vdata.brand, vdata.category, apiKey);
+    // ── Step 2: Live web market prices ───────────────────────────────────────
+    const marketPrices = await fetchMarketPrices(vdata.brand, vdata.category, pickApiKey());
 
-    // ── Step 3: Rationale — grounded in real market data ────────────────────
+    // ── Step 3: Rationale grounded in market data ────────────────────────────
     let rationale = '';
     try {
-      const signals = vdata.rarity_signals.join(', ') || 'none noted';
-      const marketContext = marketPrices
-        ? `\nLive market research:\n${marketPrices}\n`
-        : '';
+      const signals       = vdata.rarity_signals.join(', ') || 'none noted';
+      const marketContext = marketPrices ? `\nLive market research:\n${marketPrices}\n` : '';
       rationale = await groqChat(
         'llama-3.3-70b-versatile',
         [
           { role: 'system', content: RATIONALE_PROMPT },
           { role: 'user', content:
-              `Write 2-3 sentences explaining why Rs${vdata.price_low}-Rs${vdata.price_high} is the right BCC intake price for this item.${marketContext}\n` +
-              `Brand: ${vdata.brand} | Category: ${vdata.category} | ` +
-              `Condition: ${vdata.condition_score}/5 — ${vdata.condition_notes} | ` +
+              `Write 2-3 sentences explaining why Rs${vdata.price_low}-Rs${vdata.price_high} is the right BCC intake price.${marketContext}\n` +
+              `Brand: ${vdata.brand} | Category: ${vdata.category} | Condition: ${vdata.condition_score}/5 — ${vdata.condition_notes} | ` +
               `Signals: ${signals} | Score: ${vdata.pricing_score}/10\n` +
               `Reference Indian resale platforms and the live market data if provided. Be direct and practical.`
           },
         ],
         { max_tokens: 280, temperature: 0.7 },
-        apiKey
+        pickApiKey()
       );
       rationale = rationale.trim();
     } catch {
@@ -236,20 +234,21 @@ export default async function handler(req) {
 
     _itemCounter++;
     const now = new Date();
-    const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const ts  = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     _sessionLog.push({
       item_no: _itemCounter, timestamp: ts,
       brand: vdata.brand, category: vdata.category,
-      score: vdata.pricing_score,
+      score: vdata.pricing_score, photo_count: files.length,
       price_low: vdata.price_low, price_high: vdata.price_high,
       final_price: null, action: 'pending',
     });
 
     return ok({
       item_no: _itemCounter,
+      photo_count: files.length,
       ...Object.fromEntries(REQUIRED.map(k => [k, vdata[k]])),
       market_rationale: rationale,
-      market_prices: marketPrices,   // null when brand is unbranded or search failed
+      market_prices: marketPrices,
     });
   }
 
@@ -258,9 +257,8 @@ export default async function handler(req) {
     let body;
     try { body = await req.json(); } catch { return err(400, 'Invalid JSON body.'); }
     const { item_no, action, final_price } = body;
-    if (!Number.isInteger(item_no) || !['accepted','overridden'].includes(action)) {
+    if (!Number.isInteger(item_no) || !['accepted','overridden'].includes(action))
       return err(400, "item_no (int) and action ('accepted'|'overridden') are required.");
-    }
     const entry = _sessionLog.find(e => e.item_no === item_no);
     if (entry) { entry.action = action; entry.final_price = final_price; }
     return ok({ ok: true });
@@ -274,7 +272,6 @@ export default async function handler(req) {
   return err(404, `Route not found: ${method} ${path}`);
 }
 
-// Tell Netlify which URL paths this function should intercept (v2 routing)
 export const config = {
   path: ['/analyse', '/log-decision', '/session-log'],
 };

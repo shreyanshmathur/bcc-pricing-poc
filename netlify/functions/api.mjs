@@ -64,7 +64,10 @@ Respond ONLY with a valid JSON object — no markdown, no text outside JSON:
   "confidence": "low" or "medium" or "high"
 }
 
-If NOT a clothing/fashion item: {"error": "This image does not appear to show a clothing item."}`;
+The photo may show the item laid flat, on a hanger, or being worn by a person — all are valid. Assess the clothing visible in the image regardless of how it is presented. When worn by a person, focus on the garment(s), not the person.
+
+Only return the error JSON if the image contains NO clothing at all (e.g. a landscape, food, animal, blank wall):
+{"error": "This image does not appear to show a clothing item."}`;
 
 const RATIONALE_PROMPT = `You are a pricing analyst at Bombay Closet Cleanse (BCC), India's pre-loved fashion platform. Write 2-3 conversational sentences of market rationale for non-technical buying staff. Be specific, reference Indian resale platforms where relevant, and incorporate any real market price data provided. No jargon.`;
 

@@ -674,8 +674,8 @@ async function runAnalysis(){
 
 // ── Render all items (build tabs, show first) ──
 function renderAllItems(data){
-  const items = data.items || [data];
-  const photoCount = data.photo_count || 1;
+  const items     = data.items || [data];
+  const numPhotos = data.photo_count || 1;   // renamed from photoCount to avoid shadowing DOM ref
 
   // Build tab strip
   if(items.length > 1){
@@ -686,17 +686,17 @@ function renderAllItems(data){
     }).join('');
     itemTabs.querySelectorAll('.item-tab').forEach(btn => {
       btn.addEventListener('click', () => {
-        activeItemIdx = parseInt(btn.dataset.idx);
+        activeItemIdx = parseInt(btn.dataset.idx, 10);
         itemTabs.querySelectorAll('.item-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        renderItem(items[activeItemIdx], photoCount);
+        renderItem(items[activeItemIdx], numPhotos);
       });
     });
   } else {
     itemTabs.style.display = 'none';
   }
 
-  renderItem(items[0], photoCount);
+  renderItem(items[0], numPhotos);
   showState('results');
   refreshLog();
 }
@@ -835,7 +835,7 @@ async function refreshLog(){
 
 function renderLog(log){
   if(!log.length){
-    logBody.innerHTML = '<tr class="log-empty"><td colspan="9">No items logged this session</td></tr>';
+    logBody.innerHTML = '<tr class="log-empty"><td colspan="8">No items logged this session</td></tr>';
     return;
   }
   logBody.innerHTML = log.map((e, i) => {

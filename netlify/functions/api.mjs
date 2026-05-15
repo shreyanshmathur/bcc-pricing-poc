@@ -13,7 +13,8 @@
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 let _sessionLog  = [];
-let _itemCounter = 0;
+// Seeded from timestamp to reduce item_no collisions after a cold-start reset (POC tradeoff)
+let _itemCounter = Date.now() % 100000;
 let _keyIndex    = 0;
 
 // ── API key rotation ──────────────────────────────────────────────────────────
@@ -108,16 +109,19 @@ async function groqChat(model, messages, extra, apiKey) {
     throw new Error(`Groq ${resp.status}: ${txt.slice(0, 300)}`);
   }
   const json = await resp.json();
-  return json.choices[0].message.content;
+  const content = json?.choices?.[0]?.message?.content;
+  if (content == null)
+    throw new Error(`Groq returned no content (choices: ${JSON.stringify(json?.choices ?? [])})`);
+  return content;
 }
 
 /** Live market price search — returns null on failure (best-effort). */
 async function fetchMarketPrices(brand, category, itemDescription, apiKey) {
   if (!brand || brand.toLowerCase() === 'unbranded') return null;
   try {
-    const query = itemDescription
+    const query = (itemDescription
       ? `${brand} ${itemDescription}`
-      : `${brand} ${category}`;
+      : `${brand} ${category}`).replace(/\s+/g, ' ').trim();
     const result = await groqChat(
       'compound-beta',
       [
@@ -170,15 +174,18 @@ async function generateRationale(item, marketPrices, apiKey) {
 /** Sanitise and clamp numeric fields on a raw item object. */
 function sanitiseItem(raw) {
   const item = { ...raw };
-  item.condition_score = Math.max(1, Math.min(5, parseInt(item.condition_score) || 3));
-  item.pricing_score   = Math.max(1, Math.min(10, parseInt(item.pricing_score) || 5));
-  item.price_low       = parseInt(item.price_low)  || 299;
-  item.price_high      = parseInt(item.price_high) || 499;
+  item.condition_score = Math.max(1, Math.min(5, parseInt(item.condition_score, 10) || 3));
+  item.pricing_score   = Math.max(1, Math.min(10, parseInt(item.pricing_score, 10) || 5));
+  item.price_low       = parseInt(item.price_low,  10) || 299;
+  item.price_high      = parseInt(item.price_high, 10) || 499;
   if (!Array.isArray(item.rarity_signals))
     item.rarity_signals = item.rarity_signals ? [String(item.rarity_signals)] : [];
   if (item.price_low > item.price_high)
     [item.price_low, item.price_high] = [item.price_high, item.price_low];
   item.item_description = item.item_description || item.category;
+  // Fill optional fields that the model occasionally omits
+  item.confidence       = item.confidence      || 'medium';
+  item.condition_notes  = item.condition_notes || 'No notes provided.';
   return item;
 }
 
@@ -213,6 +220,13 @@ export default async function handler(req) {
     }
     if (totalBytes > 25 * 1024 * 1024)
       return err(413, `Total upload is ${(totalBytes / 1024 / 1024).toFixed(1)} MB — max 25 MB combined.`);
+
+    // Server-side MIME allowlist (client type header can be spoofed)
+    const ALLOWED_MIME = new Set(['image/jpeg','image/jpg','image/png','image/webp']);
+    for (const f of files) {
+      if (!ALLOWED_MIME.has((f.type || '').toLowerCase()))
+        return err(415, `File type "${f.type}" is not supported. Please upload JPEG, PNG, or WebP images.`);
+    }
 
     // Build image blocks
     const imageBlocks = await Promise.all(files.map(async file => {

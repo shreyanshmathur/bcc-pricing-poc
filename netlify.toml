@@ -1,0 +1,12 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# The JS function (api.mjs) declares its own path routing via `export const config`
+# so no [[redirects]] are needed for API routes.
+# Keep the SPA fallback so direct URL loads always return index.html.
+
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

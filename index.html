@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCC AI Pricing Engine — Staff Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+img { display: block; max-width: 100%; }
+button { cursor: pointer; border: none; font: inherit; }
+input { font: inherit; }
+a { text-decoration: none; }
+
+/* ── Tokens ── */
+:root {
+  --bg:         #FAFAF8;
+  --dark:       #1C1C1A;
+  --rose:       #C8928A;
+  --rose-light: #E8B4AE;
+  --card:       #FFFFFF;
+  --muted:      #6B6560;
+  --success:    #4A7C6B;
+  --border:     #E8E2DC;
+  --serif:      'Cormorant Garamond', Georgia, serif;
+  --sans:       system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius:     12px;
+  --shadow:     0 2px 16px rgba(28,28,26,.07);
+}
+
+/* ── Base ── */
+body {
+  background: var(--bg);
+  color: var(--dark);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+/* ── Nav ── */
+nav {
+  background: var(--dark);
+  padding: 0 28px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-brand {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+.nav-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9b9590;
+}
+
+/* ── Layout ── */
+.main-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Panel ── */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+}
+.panel-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 20px;
+}
+
+/* ── Upload panel ── */
+.drop-zone {
+  border: 2px dashed var(--rose);
+  border-radius: 8px;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .18s, border-color .18s;
+  overflow: hidden;
+  position: relative;
+}
+.drop-zone:hover,
+.drop-zone.drag-over {
+  background: #fdf5f4;
+  border-color: var(--rose-light);
+}
+.drop-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  pointer-events: none;
+}
+.drop-icon {
+  width: 44px;
+  height: 44px;
+  opacity: .45;
+}
+.drop-text {
+  font-size: 14px;
+  color: var(--muted);
+}
+.drop-subtext {
+  font-size: 11px;
+  color: #a09a95;
+  letter-spacing: .04em;
+}
+.drop-error {
+  font-size: 12px;
+  color: #c0392b;
+  margin-top: 4px;
+  min-height: 18px;
+}
+#imagePreview {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  max-height: 340px;
+  object-fit: contain;
+  background: #f5f0ec;
+  display: none;
+}
+.btn-analyse {
+  width: 100%;
+  margin-top: 16px;
+  height: 44px;
+  background: var(--rose);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  transition: background .18s, opacity .18s;
+}
+.btn-analyse:hover:not(:disabled) { background: #b8817a; }
+.btn-analyse:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Results panel states ── */
+.empty-state {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+.empty-icon { opacity: .3; }
+.empty-state p { font-size: 13px; color: #b5afa9; }
+
+/* ── Skeleton / loading ── */
+.loading-state { display: none; }
+.loading-label {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 18px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.skel-row { display: flex; gap: 14px; margin-bottom: 16px; align-items: center; }
+.skel {
+  background: linear-gradient(90deg, #ede8e3 25%, #f5f0ec 50%, #ede8e3 75%);
+  background-size: 400% 100%;
+  border-radius: 6px;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+.skel-circle { width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0; }
+.skel-block { height: 14px; flex: 1; }
+.skel-tall { height: 28px; }
+.skel-short { max-width: 60%; }
+
+/* ── Error state ── */
+.error-state {
+  min-height: 180px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 16px;
+}
+.error-icon { color: #c0392b; font-size: 28px; }
+.error-msg {
+  font-size: 13px;
+  color: #c0392b;
+  background: #fdf0ef;
+  border: 1px solid #f5c6c2;
+  border-radius: 6px;
+  padding: 12px 16px;
+  max-width: 340px;
+  line-height: 1.5;
+}
+.btn-retry {
+  height: 36px;
+  padding: 0 20px;
+  background: transparent;
+  border: 1px solid var(--rose);
+  color: var(--rose);
+  border-radius: 6px;
+  font-size: 13px;
+  transition: background .15s;
+}
+.btn-retry:hover { background: #fdf5f4; }
+
+/* ── Results card ── */
+#results { display: none; }
+.results-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 22px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.score-badge {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--rose);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.score-num {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+}
+.score-denom {
+  font-size: 10px;
+  opacity: .75;
+  letter-spacing: .02em;
+}
+.item-meta { flex: 1; min-width: 0; }
+.item-brand {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--dark);
+}
+.item-category {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.conf-badge {
+  display: inline-block;
+  margin-top: 7px;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.conf-high  { color: var(--success); border-color: #b8d8cf; background: #f0f7f5; }
+.conf-medium{ color: #9a7a3a; border-color: #e3d099; background: #fdf9ed; }
+.conf-low   { color: #9a5b3a; border-color: #e8c4a8; background: #fdf5ef; }
+
+/* ── Section blocks ── */
+.r-section { margin-bottom: 18px; }
+.r-label {
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #a09a95;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+/* ── Condition dots ── */
+.cond-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.dots { display: flex; gap: 5px; }
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background .2s;
+}
+.dot.on { background: var(--rose); }
+.cond-score { font-size: 13px; color: var(--muted); }
+.cond-notes { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* ── Rarity tags ── */
+.tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-size: 11px;
+  color: var(--rose);
+  background: #fdf5f4;
+  border: 1px solid var(--rose-light);
+  border-radius: 20px;
+  padding: 3px 10px;
+  letter-spacing: .02em;
+}
+
+/* ── Price band ── */
+.price-band {
+  font-family: var(--serif);
+  font-size: 34px;
+  font-weight: 600;
+  color: var(--dark);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+/* ── Rationale ── */
+.rationale-text {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* ── Market prices (live web search) ── */
+.market-card {
+  background: #f0f7f5;
+  border: 1px solid #b8d8cf;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #2d5a4e;
+  line-height: 1.65;
+}
+.market-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--success);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse-dot 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .4; transform: scale(.7); }
+}
+
+/* ── Accept / Override ── */
+.btn-accept {
+  display: block;
+  width: 100%;
+  height: 44px;
+  background: var(--success);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  margin-top: 20px;
+  transition: background .18s, opacity .18s;
+}
+.btn-accept:hover:not(:disabled) { background: #3d6b5c; }
+.btn-accept:disabled { opacity: .45; cursor: not-allowed; }
+
+.decision-ok {
+  display: none;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #f0f7f5;
+  border: 1px solid #b8d8cf;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--success);
+}
+
+.override-trigger {
+  margin-top: 12px;
+  text-align: center;
+}
+.override-trigger a {
+  font-size: 12px;
+  color: #a09a95;
+  border-bottom: 1px solid #d5cfc9;
+  transition: color .15s;
+}
+.override-trigger a:hover { color: var(--rose); border-color: var(--rose); }
+
+.override-section {
+  display: none;
+  margin-top: 12px;
+  padding: 14px;
+  background: #fafaf8;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.override-section label {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 8px;
+}
+.override-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.rupee-prefix {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--muted);
+}
+.override-input-row input {
+  flex: 1;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: var(--dark);
+  background: var(--card);
+  transition: border-color .15s;
+}
+.override-input-row input:focus { outline: none; border-color: var(--rose); }
+.override-input-row input.input-err { border-color: #e07060; }
+.btn-override {
+  width: 100%;
+  height: 38px;
+  background: var(--dark);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: background .15s;
+}
+.btn-override:hover { background: #333330; }
+
+/* ── Session log ── */
+.log-wrap {
+  max-width: 1080px;
+  margin: 0 auto 56px;
+  padding: 0 24px;
+}
+.log-heading {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 14px;
+  padding-top: 8px;
+}
+.log-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.log-table th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #a09a95;
+  padding: 0 14px 10px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.log-table td {
+  padding: 11px 14px;
+  color: var(--dark);
+  white-space: nowrap;
+  border-bottom: 1px solid #f0ece7;
+}
+.log-table tr.row-alt td { background: #f9f6f3; }
+.log-empty td {
+  text-align: center;
+  color: #c0b9b2;
+  padding: 32px 14px;
+  font-size: 13px;
+}
+.score-pip {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--rose);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+.act-badge {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.act-accepted  { background: #f0f7f5; color: var(--success); border: 1px solid #b8d8cf; }
+.act-overridden{ background: #fdf5ef; color: #9a5b3a; border: 1px solid #e8c4a8; }
+.act-pending   { background: #f5f5f5; color: #a09a95; border: 1px solid #e0dbd5; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .main-wrap { grid-template-columns: 1fr; padding: 20px 16px 28px; }
+  .panel { padding: 20px; }
+  nav { padding: 0 16px; }
+  .nav-label { display: none; }
+  .price-band { font-size: 28px; }
+  .log-wrap { padding: 0 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <span class="nav-brand">Bombay Closet Cleanse</span>
+  <span class="nav-label">AI Pricing Engine — Staff Portal</span>
+</nav>
+
+<!-- ── Main two-column layout ── -->
+<div class="main-wrap">
+
+  <!-- Left: Upload panel -->
+  <div class="panel">
+    <h2 class="panel-title">Upload Item Photo</h2>
+
+    <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Upload clothing photo">
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden>
+      <div class="drop-content" id="dropContent">
+        <svg class="drop-icon" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="4" y="10" width="36" height="28" rx="4" stroke="#C8928A" stroke-width="2"/>
+          <circle cx="15" cy="19" r="4" stroke="#C8928A" stroke-width="2"/>
+          <path d="M4 30l9-8 7 7 5-5 11 9" stroke="#C8928A" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M22 2v12M18 6l4-4 4 4" stroke="#C8928A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="drop-text">Drag &amp; drop or click to upload</p>
+        <p class="drop-subtext">JPEG · PNG · WebP &nbsp;·&nbsp; Max 10 MB</p>
+      </div>
+      <img id="imagePreview" alt="Selected clothing item">
+    </div>
+    <p class="drop-error" id="dropError" aria-live="polite"></p>
+
+    <button class="btn-analyse" id="analyseBtn" disabled>Analyse Item</button>
+  </div>
+
+  <!-- Right: Results panel -->
+  <div class="panel" id="resultsPanel">
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <svg class="empty-icon" width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true">
+        <rect x="6" y="14" width="40" height="30" rx="5" stroke="#C8928A" stroke-width="1.8"/>
+        <circle cx="18" cy="22" r="5" stroke="#C8928A" stroke-width="1.8"/>
+        <path d="M6 36l11-10 8 8 6-6 13 10" stroke="#C8928A" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M26 4v10M22 8l4-4 4 4" stroke="#C8928A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p>Upload a photo to see the AI&nbsp;pricing assessment</p>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div class="loading-state" id="loadingState" aria-live="polite" aria-busy="true">
+      <p class="loading-label" id="loadingLabel">Analysing item&hellip;</p>
+      <div class="skel-row">
+        <div class="skel skel-circle"></div>
+        <div style="flex:1">
+          <div class="skel skel-block skel-tall" style="margin-bottom:8px"></div>
+          <div class="skel skel-block skel-short"></div>
+        </div>
+      </div>
+      <div class="skel skel-block" style="height:10px;margin-bottom:18px;max-width:40%"></div>
+      <div class="skel skel-block" style="height:12px;margin-bottom:10px"></div>
+      <div class="skel skel-block" style="height:12px;margin-bottom:10px;max-width:80%"></div>
+      <div class="skel skel-block skel-tall" style="margin-bottom:18px;max-width:55%"></div>
+      <div class="skel skel-block" style="height:12px;margin-bottom:8px"></div>
+      <div class="skel skel-block" style="height:12px;margin-bottom:8px;max-width:90%"></div>
+      <div class="skel skel-block" style="height:12px;max-width:70%"></div>
+    </div>
+
+    <!-- Error state -->
+    <div class="error-state" id="errorState" role="alert">
+      <div class="error-icon">&#9888;</div>
+      <p class="error-msg" id="errorMsg"></p>
+      <button class="btn-retry" id="retryBtn">Try Again</button>
+    </div>
+
+    <!-- Results -->
+    <div id="results">
+      <!-- Header: score + brand/category -->
+      <div class="results-header">
+        <div class="score-badge" id="scoreBadge" aria-label="Pricing score">
+          <span class="score-num" id="scoreNum">—</span>
+          <span class="score-denom">/10</span>
+        </div>
+        <div class="item-meta">
+          <div class="item-brand" id="itemBrand"></div>
+          <div class="item-category" id="itemCategory"></div>
+          <span class="conf-badge" id="confBadge"></span>
+        </div>
+      </div>
+
+      <!-- Condition -->
+      <div class="r-section">
+        <p class="r-label">Condition</p>
+        <div class="cond-row">
+          <div class="dots" id="condDots"></div>
+          <span class="cond-score" id="condScore"></span>
+        </div>
+        <p class="cond-notes" id="condNotes"></p>
+      </div>
+
+      <!-- Rarity signals -->
+      <div class="r-section" id="raritySection">
+        <p class="r-label">Demand Signals</p>
+        <div class="tag-wrap" id="rarityTags"></div>
+      </div>
+
+      <!-- Live market prices (web search) -->
+      <div class="r-section" id="marketSection" style="display:none">
+        <div class="market-card">
+          <div class="market-card-header">
+            <span class="live-dot"></span>
+            Live Market Research
+          </div>
+          <p id="marketPricesText"></p>
+        </div>
+      </div>
+
+      <!-- Price band -->
+      <div class="r-section">
+        <p class="r-label">Recommended Price</p>
+        <div class="price-band" id="priceBand"></div>
+      </div>
+
+      <!-- Rationale -->
+      <div class="r-section">
+        <p class="r-label">Why This Price</p>
+        <p class="rationale-text" id="rationaleText"></p>
+      </div>
+
+      <!-- Accept -->
+      <button class="btn-accept" id="acceptBtn">Accept Recommended Price</button>
+
+      <!-- Decision success -->
+      <div class="decision-ok" id="decisionOk"></div>
+
+      <!-- Override -->
+      <div class="override-trigger" id="overrideTrigger">
+        <a href="#" id="overrideLink">Override price</a>
+      </div>
+      <div class="override-section" id="overrideSection">
+        <label for="overrideInput">Enter override price (INR)</label>
+        <div class="override-input-row">
+          <span class="rupee-prefix">₹</span>
+          <input type="number" id="overrideInput" min="1" max="99999" placeholder="e.g. 450">
+        </div>
+        <button class="btn-override" id="overrideBtn">Log Override</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Session log ── -->
+<div class="log-wrap">
+  <h3 class="log-heading">Session Intake Log</h3>
+  <div class="log-scroll">
+    <table class="log-table" id="logTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Time</th>
+          <th>Brand</th>
+          <th>Category</th>
+          <th>Score</th>
+          <th>Recommended</th>
+          <th>Final Price</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="logBody">
+        <tr class="log-empty"><td colspan="8">No items logged this session</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── State ──
+  let selectedFile = null;
+  let currentResult = null;
+  let decisionLogged = false;
+  let loadingTimer = null;
+
+  // ── DOM refs ──
+  const dropZone      = document.getElementById('dropZone');
+  const fileInput     = document.getElementById('fileInput');
+  const dropContent   = document.getElementById('dropContent');
+  const imagePreview  = document.getElementById('imagePreview');
+  const dropError     = document.getElementById('dropError');
+  const analyseBtn    = document.getElementById('analyseBtn');
+
+  const emptyState    = document.getElementById('emptyState');
+  const loadingState  = document.getElementById('loadingState');
+  const errorState    = document.getElementById('errorState');
+  const errorMsg      = document.getElementById('errorMsg');
+  const retryBtn      = document.getElementById('retryBtn');
+  const results       = document.getElementById('results');
+
+  const scoreNum      = document.getElementById('scoreNum');
+  const itemBrand     = document.getElementById('itemBrand');
+  const itemCategory  = document.getElementById('itemCategory');
+  const confBadge     = document.getElementById('confBadge');
+  const condDots      = document.getElementById('condDots');
+  const condScore     = document.getElementById('condScore');
+  const condNotes     = document.getElementById('condNotes');
+  const raritySection = document.getElementById('raritySection');
+  const rarityTags    = document.getElementById('rarityTags');
+  const priceBand     = document.getElementById('priceBand');
+  const rationaleText = document.getElementById('rationaleText');
+
+  const acceptBtn     = document.getElementById('acceptBtn');
+  const decisionOk    = document.getElementById('decisionOk');
+  const overrideTrigger = document.getElementById('overrideTrigger');
+  const overrideLink  = document.getElementById('overrideLink');
+  const overrideSection = document.getElementById('overrideSection');
+  const overrideInput = document.getElementById('overrideInput');
+  const overrideBtn   = document.getElementById('overrideBtn');
+  const logBody       = document.getElementById('logBody');
+  const loadingLabel  = document.getElementById('loadingLabel');
+  const marketSection = document.getElementById('marketSection');
+  const marketPricesText = document.getElementById('marketPricesText');
+
+  // ── Helpers ──
+  function formatINR(n) {
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  const LOADING_STEPS = [
+    'Analysing clothing item…',
+    'Searching live market prices…',
+    'Generating price recommendation…',
+  ];
+
+  function startLoadingSteps() {
+    let step = 0;
+    loadingLabel.textContent = LOADING_STEPS[0];
+    if (loadingTimer) clearInterval(loadingTimer);
+    loadingTimer = setInterval(() => {
+      step = (step + 1) % LOADING_STEPS.length;
+      loadingLabel.textContent = LOADING_STEPS[step];
+    }, 3500);
+  }
+
+  function stopLoadingSteps() {
+    if (loadingTimer) { clearInterval(loadingTimer); loadingTimer = null; }
+    loadingLabel.textContent = LOADING_STEPS[0];
+  }
+
+  function showState(name) {
+    emptyState.style.display   = name === 'empty'   ? 'flex'  : 'none';
+    loadingState.style.display = name === 'loading' ? 'block' : 'none';
+    errorState.style.display   = name === 'error'   ? 'flex'  : 'none';
+    results.style.display      = name === 'results' ? 'block' : 'none';
+    if (name !== 'loading') stopLoadingSteps();
+  }
+
+  // ── File selection ──
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+
+  fileInput.addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) handleFile(f);
+    // reset so same file can be reselected
+    fileInput.value = '';
+  });
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  function handleFile(file) {
+    dropError.textContent = '';
+    const valid = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!valid.includes(file.type.toLowerCase())) {
+      dropError.textContent = 'Only JPEG, PNG, or WebP images are accepted.';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      dropError.textContent = 'File exceeds 10 MB limit. Please use a smaller image.';
+      return;
+    }
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      imagePreview.src = ev.target.result;
+      imagePreview.style.display = 'block';
+      dropContent.style.display  = 'none';
+    };
+    reader.readAsDataURL(file);
+    analyseBtn.disabled = false;
+    // Reset results if re-uploading
+    if (results.style.display === 'block') showState('empty');
+  }
+
+  // ── Analyse ──
+  analyseBtn.addEventListener('click', runAnalysis);
+
+  async function runAnalysis() {
+    if (!selectedFile) return;
+    analyseBtn.disabled = true;
+    showState('loading');
+    startLoadingSteps();
+
+    const fd = new FormData();
+    fd.append('file', selectedFile);
+
+    try {
+      const resp = await fetch('/analyse', { method: 'POST', body: fd });
+
+      // Read as text first so a non-JSON error body never causes a silent throw
+      const rawText = await resp.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (_) {
+        showState('error');
+        errorMsg.textContent = `Server error (HTTP ${resp.status}). The API returned an unexpected response — check Netlify function logs.`;
+        analyseBtn.disabled = false;
+        return;
+      }
+
+      if (!resp.ok) {
+        showState('error');
+        errorMsg.textContent = data.detail || `Error ${resp.status}: Analysis failed.`;
+        analyseBtn.disabled = false;
+        return;
+      }
+
+      currentResult = data;
+      decisionLogged = false;
+      renderResults(data);
+      analyseBtn.disabled = false;
+
+    } catch (err) {
+      showState('error');
+      errorMsg.textContent = 'Could not reach the server. Check your connection and try again.';
+      analyseBtn.disabled = false;
+    }
+  }
+
+  // ── Render results ──
+  function renderResults(d) {
+    scoreNum.textContent = d.pricing_score;
+    itemBrand.textContent = d.brand;
+    itemCategory.textContent = d.category;
+
+    // Confidence badge
+    const confMap = { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence' };
+    confBadge.textContent = confMap[d.confidence] || d.confidence;
+    confBadge.className = 'conf-badge conf-' + (d.confidence || 'medium');
+
+    // Condition dots
+    condDots.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'dot' + (i <= d.condition_score ? ' on' : '');
+      condDots.appendChild(dot);
+    }
+    condScore.textContent = d.condition_score + '/5';
+    condNotes.textContent = d.condition_notes;
+
+    // Rarity signals
+    rarityTags.innerHTML = '';
+    if (d.rarity_signals && d.rarity_signals.length > 0) {
+      d.rarity_signals.forEach(sig => {
+        const t = document.createElement('span');
+        t.className = 'tag';
+        t.textContent = sig;
+        rarityTags.appendChild(t);
+      });
+      raritySection.style.display = 'block';
+    } else {
+      raritySection.style.display = 'none';
+    }
+
+    // Live market prices (web search)
+    if (d.market_prices) {
+      marketPricesText.textContent = d.market_prices;
+      marketSection.style.display = 'block';
+    } else {
+      marketSection.style.display = 'none';
+    }
+
+    priceBand.textContent = formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
+    rationaleText.textContent = d.market_rationale;
+
+    // Reset decision state
+    acceptBtn.disabled = false;
+    acceptBtn.textContent = 'Accept — ' + formatINR(d.price_low) + ' – ' + formatINR(d.price_high);
+    decisionOk.style.display = 'none';
+    decisionOk.textContent = '';
+    overrideTrigger.style.display = 'block';
+    overrideSection.style.display = 'none';
+    overrideInput.value = '';
+    overrideInput.classList.remove('input-err');
+
+    showState('results');
+    refreshLog();
+  }
+
+  // ── Accept ──
+  acceptBtn.addEventListener('click', async () => {
+    if (!currentResult || decisionLogged) return;
+    const mid = Math.round((currentResult.price_low + currentResult.price_high) / 2 / 50) * 50;
+    await postDecision('accepted', mid);
+    acceptBtn.disabled = true;
+    overrideTrigger.style.display = 'none';
+    overrideSection.style.display = 'none';
+    decisionOk.textContent = '✓ Accepted at ' + formatINR(mid) + ' — logged to session';
+    decisionOk.style.display = 'block';
+    decisionLogged = true;
+    refreshLog();
+  });
+
+  // ── Override toggle ──
+  overrideLink.addEventListener('click', e => {
+    e.preventDefault();
+    overrideSection.style.display = overrideSection.style.display === 'none' ? 'block' : 'none';
+    if (overrideSection.style.display === 'block') overrideInput.focus();
+  });
+
+  // ── Override submit ──
+  overrideBtn.addEventListener('click', async () => {
+    const val = parseInt(overrideInput.value, 10);
+    if (!val || val < 1 || val > 99999) {
+      overrideInput.classList.add('input-err');
+      return;
+    }
+    overrideInput.classList.remove('input-err');
+    if (!currentResult || decisionLogged) return;
+
+    await postDecision('overridden', val);
+    acceptBtn.disabled = true;
+    overrideTrigger.style.display = 'none';
+    overrideSection.style.display = 'none';
+    decisionOk.textContent = '✓ Override logged at ' + formatINR(val);
+    decisionOk.style.display = 'block';
+    decisionLogged = true;
+    refreshLog();
+  });
+
+  overrideInput.addEventListener('keydown', e => { if (e.key === 'Enter') overrideBtn.click(); });
+
+  async function postDecision(action, finalPrice) {
+    try {
+      await fetch('/log-decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_no: currentResult.item_no, action, final_price: finalPrice })
+      });
+    } catch (_) { /* non-fatal */ }
+  }
+
+  // ── Retry ──
+  retryBtn.addEventListener('click', () => {
+    if (currentResult) {
+      renderResults(currentResult);
+    } else {
+      showState('empty');
+    }
+  });
+
+  // ── Session log ──
+  async function refreshLog() {
+    try {
+      const resp = await fetch('/session-log');
+      const data = await resp.json();
+      renderLog(data.log || []);
+    } catch (_) { /* non-fatal */ }
+  }
+
+  function renderLog(log) {
+    if (!log.length) {
+      logBody.innerHTML = '<tr class="log-empty"><td colspan="8">No items logged this session</td></tr>';
+      return;
+    }
+    logBody.innerHTML = log.map((e, i) => {
+      const actClass = 'act-' + e.action;
+      const actLabel = e.action.charAt(0).toUpperCase() + e.action.slice(1);
+      const finalCell = e.final_price ? formatINR(e.final_price) : '—';
+      return '<tr class="' + (i % 2 === 1 ? 'row-alt' : '') + '">'
+        + '<td>' + e.item_no + '</td>'
+        + '<td>' + e.timestamp + '</td>'
+        + '<td><strong>' + esc(e.brand) + '</strong></td>'
+        + '<td>' + esc(e.category) + '</td>'
+        + '<td><span class="score-pip">' + e.score + '/10</span></td>'
+        + '<td>' + formatINR(e.price_low) + ' – ' + formatINR(e.price_high) + '</td>'
+        + '<td>' + finalCell + '</td>'
+        + '<td><span class="act-badge ' + actClass + '">' + actLabel + '</span></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Initial load + poll
+  showState('empty');
+  refreshLog();
+  setInterval(refreshLog, 12000);
+
+})();
+</script>
+</body>
+</html>

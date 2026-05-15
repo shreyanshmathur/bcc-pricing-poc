@@ -99,10 +99,16 @@ function ok(data)        { return new Response(JSON.stringify(data), { status: 2
 function err(status, msg){ return new Response(JSON.stringify({ detail: msg }), { status, headers: corsHeaders() }); }
 
 async function groqChat(model, messages, extra, apiKey) {
+  return groqChatWithSignal(model, messages, extra, apiKey, null);
+}
+
+/** Same as groqChat but accepts an AbortSignal for timeout/cancellation. */
+async function groqChatWithSignal(model, messages, extra, apiKey, signal) {
   const resp = await fetch(GROQ_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
     body: JSON.stringify({ model, messages, ...extra }),
+    ...(signal ? { signal } : {}),
   });
   if (!resp.ok) {
     const txt = await resp.text();
@@ -115,14 +121,20 @@ async function groqChat(model, messages, extra, apiKey) {
   return content;
 }
 
-/** Live market price search — returns null on failure (best-effort). */
+/** Live market price search — returns null on failure (best-effort).
+ *  Hard timeout: 25 s so a slow web-search never blocks the whole pipeline. */
 async function fetchMarketPrices(brand, category, itemDescription, apiKey) {
   if (!brand || brand.toLowerCase() === 'unbranded') return null;
   try {
     const query = (itemDescription
       ? `${brand} ${itemDescription}`
       : `${brand} ${category}`).replace(/\s+/g, ' ').trim();
-    const result = await groqChat(
+
+    const TIMEOUT_MS = 25_000;
+    const controller  = new AbortController();
+    const timer       = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    const result = await groqChatWithSignal(
       'compound-beta',
       [
         {
@@ -138,11 +150,13 @@ async function fetchMarketPrices(brand, category, itemDescription, apiKey) {
         },
       ],
       { max_tokens: 300, temperature: 0.1 },
-      apiKey
-    );
+      apiKey,
+      controller.signal
+    ).finally(() => clearTimeout(timer));
+
     return result ? result.trim() : null;
   } catch (_) {
-    return null;
+    return null;   // timeout, network error, or model error — degrade gracefully
   }
 }
 

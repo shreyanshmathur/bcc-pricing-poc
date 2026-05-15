@@ -73,10 +73,10 @@ nav{background:var(--dark);padding:0 32px;height:58px;display:flex;align-items:c
 .photo-slot.has-photo .slot-remove{display:flex}
 .photo-slot:hover .slot-remove{opacity:1}
 
-.photo-count-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.photo-count{font-size:12px;color:var(--muted)}
+.photo-count-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;margin-bottom:14px}
+.photo-count{font-size:12px;color:var(--muted);white-space:nowrap}
 .photo-count strong{color:var(--dark)}
-.file-types{font-size:11px;color:#c0b9b2;letter-spacing:.03em}
+.file-types{font-size:11px;color:#c0b9b2;letter-spacing:.03em;white-space:nowrap}
 
 input[type=file]{display:none}
 
@@ -142,6 +142,7 @@ input[type=file]{display:none}
 .results-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--border-subtle)}
 .score-ring{position:relative;width:62px;height:62px;flex-shrink:0}
 .score-ring svg{transform:rotate(-90deg)}
+#scoreArc{transition:stroke-dashoffset .65s cubic-bezier(.4,0,.2,1)}
 .score-ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .score-ring-num{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--dark)}
 .score-ring-denom{font-size:9px;color:var(--muted);letter-spacing:.04em;margin-top:1px}
@@ -604,6 +605,11 @@ function clearSlot(idx){
 }
 
 // ── Step progress ──
+// Timings mirror the real pipeline:
+//   ~8s  Vision model finishes    → step 2 (market search) becomes active
+//   ~30s Compound-beta web search → step 3 (building price) becomes active
+// Step 3 is never auto-completed — it stays active (pulsing) until actual
+// results arrive, so the user always sees a live indicator.
 function setStep(n){
   [1,2,3].forEach(i => {
     const el = document.getElementById('lstep' + i);
@@ -612,8 +618,8 @@ function setStep(n){
 }
 function startSteps(){
   setStep(1);
-  stepTimer1 = setTimeout(() => setStep(2), 4500);
-  stepTimer2 = setTimeout(() => setStep(3), 13000);
+  stepTimer1 = setTimeout(() => setStep(2), 8000);
+  stepTimer2 = setTimeout(() => setStep(3), 30000);
 }
 function stopSteps(){
   clearTimeout(stepTimer1); clearTimeout(stepTimer2);

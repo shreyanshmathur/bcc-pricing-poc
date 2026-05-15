@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 88" fill="none">
+  <!-- Hanger arms (white, thick, round caps) -->
+  <line x1="47" y1="35" x2="5"  y2="78" stroke="white" stroke-width="6.5" stroke-linecap="round"/>
+  <line x1="53" y1="35" x2="95" y2="78" stroke="white" stroke-width="6.5" stroke-linecap="round"/>
+  <!-- Bottom bar -->
+  <line x1="5"  y1="78" x2="95" y2="78" stroke="white" stroke-width="6.5" stroke-linecap="round"/>
+  <!-- Heart (lime-green fill, white stroke) -->
+  <path d="M50,36
+    C46,31 28,28 28,19
+    C28,11 35,8 41,10.5
+    C44.5,11.5 47.5,14.5 50,17
+    C52.5,14.5 55.5,11.5 59,10.5
+    C65,8 72,11 72,19
+    C72,28 54,31 50,36 Z"
+    fill="#C7DF86" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

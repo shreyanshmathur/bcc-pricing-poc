@@ -61,7 +61,7 @@ Navigate to **[http://localhost:8000](http://localhost:8000)**
 
 | Call | Model | Purpose |
 |------|-------|---------|
-| Vision | `meta-llama/llama-4-scout-17b-16e-instruct` | Brand detection, condition scoring, price band |
+| Vision | `qwen/qwen3.6-27b` | Brand detection, condition scoring, price band |
 | Text | `llama-3.3-70b-versatile` | Market rationale paragraph |
 
 Both are free-tier models on Groq Cloud.

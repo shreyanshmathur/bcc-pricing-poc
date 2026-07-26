@@ -3,7 +3,7 @@
  * Zero npm dependencies. Calls Groq HTTP API directly.
  *
  * Pipeline (per analyse request):
- *  1. Vision  — llama-4-scout  → identifies ALL clothing items in photos, prices each individually
+ *  1. Vision  — qwen3.6-27b   → identifies ALL clothing items in photos, prices each individually
  *  2. Search  — compound-beta  → live market search for EACH item in parallel
  *  3. Rationale — llama-3.3-70b → per-item rationale grounded in real market data (parallel)
  *
@@ -258,7 +258,7 @@ export default async function handler(req) {
         : 'Analyse this image. Identify every separate clothing piece visible and return the full items array.';
 
       visionRaw = await groqChat(
-        'meta-llama/llama-4-scout-17b-16e-instruct',
+        'qwen/qwen3.6-27b',
         [
           { role: 'system', content: VISION_PROMPT },
           { role: 'user', content: [...imageBlocks, { type: 'text', text: photoNote }] },
